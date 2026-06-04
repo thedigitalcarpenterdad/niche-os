@@ -35,7 +35,7 @@
   import ThreadEmptyState from "./components/thread/ThreadEmptyState.svelte";
   import ThreadPanel from "./components/thread/ThreadPanel.svelte";
   import Topbar from "./components/topbar/Topbar.svelte";
-  import type { Channel, DirectConversation, MemberModeration, Message, MessagePage, RealtimeEvent, RouteTarget, SearchResult, SlashCommand, ThreadState, Upload, User, Workspace } from "./lib/types";
+  import type { Channel, DirectConversation, MemberModeration, Message, MessagePage, RealtimeEvent, RouteTarget, SearchResult, SlashCommand, ThreadState, Topic, Upload, User, Workspace } from "./lib/types";
 
   const LIVE_EDGE_TOLERANCE_PX = 96;
   const LAST_CHANNEL_STORAGE_PREFIX = "clickclack:last-channel:v1:";
@@ -46,6 +46,8 @@
   let user: User | null = null;
   let workspaces: Workspace[] = [];
   let channels: Channel[] = [];
+  let topics: Topic[] = [];
+  let selectedTopicID = "";
   let directConversations: DirectConversation[] = [];
   let messages: Message[] = [];
   let replies: Message[] = [];
@@ -81,6 +83,10 @@
   let profileStatusError = false;
   let status = "loading";
   let authRequired = false;
+  let telegramEnabled = false;
+  let telegramBotUsername = "";
+  let telegramWidgetMounted = false;
+  let authError = "";
   let connected = false;
   let socket: RealtimeConnection | null = null;
   let messageList: MessageListHandle | null = null;
@@ -134,6 +140,12 @@
     ? moderationMembers.find((member) => member.user.id === selectedProfile?.id)
     : undefined;
   $: selectedChannel = channels.find((channel) => channel.id === selectedChannelID);
+  $: visibleChannels = channels.filter((channel) => !channel.archived_at);
+  $: activeTopics = topics.filter((topic) => !topic.archived_at);
+  $: selectedTopic = activeTopics.find((topic) => topic.id === selectedTopicID);
+  $: displayMessages = selectedTopicID
+    ? messages.filter((message) => message.topic_id === selectedTopicID)
+    : messages;
   $: selectedDirect = directConversations.find((conversation) => conversation.id === selectedDirectID);
   $: activeConversationKey = selectedDirectID || selectedChannelID || "";
   $: activeUnreadState = selectedDirectID
@@ -192,10 +204,53 @@
       if (error instanceof APIError && (error.status === 401 || error.status === 403)) {
         authRequired = true;
         status = "auth";
+        await loadTelegramAuthConfig();
         return;
       }
-      status = error instanceof Error ? error.message : "Could not load ClickClack";
+      status = error instanceof Error ? error.message : "Could not load Niche OS";
     }
+  }
+
+  async function loadTelegramAuthConfig() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("error") === "not_authorized") {
+        authError =
+          "That Telegram account is not authorized. Ask a Niche admin to add you.";
+      }
+      const res = await fetch("/api/auth/telegram/login", {
+        headers: { Accept: "application/json" },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      telegramEnabled = Boolean(data?.enabled);
+      telegramBotUsername = typeof data?.bot_username === "string" ? data.bot_username : "";
+      await tick();
+      mountTelegramWidget();
+    } catch (err) {
+      // Non-fatal: login page still renders without the widget.
+    }
+  }
+
+  function mountTelegramWidget() {
+    if (!telegramEnabled || !telegramBotUsername || telegramWidgetMounted) return;
+    const container = document.getElementById("telegram-login-container");
+    if (!container) return;
+    container.innerHTML = "";
+    const script = document.createElement("script");
+    script.src = "https://telegram.org/js/telegram-widget.js?22";
+    script.setAttribute("data-telegram-login", telegramBotUsername);
+    script.setAttribute("data-size", "large");
+    script.setAttribute(
+      "data-auth-url",
+      window.location.origin + "/api/auth/telegram/callback",
+    );
+    script.setAttribute("data-request-access", "write");
+    script.setAttribute("data-userpic", "false");
+    script.setAttribute("data-radius", "8");
+    script.async = true;
+    container.appendChild(script);
+    telegramWidgetMounted = true;
   }
 
   function openProfileSettings() {
@@ -379,6 +434,7 @@
       selectedWorkspaceID = workspace.id;
       selectedChannelID = "";
       selectedDirectID = "";
+      selectedTopicID = "";
       selectedThread = null;
       selectedThreadState = null;
       selectedProfile = null;
@@ -393,7 +449,7 @@
     if (workspaceChanged || channels.length === 0) await loadChannels(false, false);
     if (serial !== routeApplySerial) return;
     if (workspaceChanged || directConversations.length === 0) await loadDirectConversations();
-    if (workspaceChanged) await Promise.all([loadModerationMembers(), loadSlashCommands()]);
+    if (workspaceChanged) await Promise.all([loadModerationMembers(), loadSlashCommands(), loadTopics()]);
     if (serial !== routeApplySerial) return;
 
     if (routeTarget) {
@@ -588,6 +644,17 @@
     }
   }
 
+  async function loadTopics() {
+    topics = [];
+    if (!selectedWorkspaceID) return;
+    try {
+      const data = await api<{ topics: Topic[] }>(`/api/workspaces/${selectedWorkspaceID}/topics`);
+      topics = data.topics ?? [];
+    } catch {
+      topics = [];
+    }
+  }
+
   function collectMentionPeople(
     currentUser: User | null,
     recent: User[],
@@ -636,6 +703,7 @@
 
   async function selectChannel(channelID: string) {
     mobileNavOpen = false;
+    selectedTopicID = "";
     rememberLastChannel(selectedWorkspaceID, channelID);
     const targetPath = appHref(selectedWorkspaceID, channelID);
     if (
@@ -646,6 +714,22 @@
       return;
     }
     await navigateToApp(selectedWorkspaceID, channelID);
+  }
+
+  async function selectTopic(channelID: string, topicID: string) {
+    mobileNavOpen = false;
+    if (selectedChannelID === channelID && !selectedDirectID && selectedTopicID === topicID) {
+      return;
+    }
+    rememberLastChannel(selectedWorkspaceID, channelID);
+    const sameChannel = channelID === selectedChannelID && !selectedDirectID;
+    selectedTopicID = topicID;
+    if (sameChannel) {
+      // Already viewing the channel; just filter to the topic in place.
+      return;
+    }
+    await navigateToApp(selectedWorkspaceID, channelID);
+    selectedTopicID = topicID;
   }
 
   async function loadMessages() {
@@ -1365,6 +1449,7 @@
 
   type OutgoingDraft = {
     body: string;
+    topicID?: string;
     quotedMessageID?: string;
     upload?: Upload;
     workspaceID: string;
@@ -1393,6 +1478,7 @@
       thread_root_id: id,
       body: draft.body,
       body_format: "markdown",
+      topic_id: draft.topicID,
       created_at: now,
       author: user || undefined,
       attachments: draft.upload ? [draft.upload] : [],
@@ -1414,6 +1500,7 @@
     const quote = replyTarget && replyContext === activeContext ? replyTarget : null;
     const draft: OutgoingDraft = {
       body,
+      topicID: selectedTopicID || undefined,
       quotedMessageID: quote?.id,
       upload: pendingUpload || undefined,
       workspaceID: selectedWorkspaceID,
@@ -1445,6 +1532,7 @@
       ? `/api/dms/${draft.directConversationID}/messages`
       : `/api/channels/${draft.channelID}/messages`;
     const payload: Record<string, unknown> = { body: draft.body, nonce };
+    if (draft.topicID) payload.topic_id = draft.topicID;
     if (draft.quotedMessageID) payload.quoted_message_id = draft.quotedMessageID;
     try {
       const data = await api<{ message: Message }>(path, {
@@ -2132,23 +2220,25 @@
   <main class="auth-shell">
     <section class="auth-panel" aria-label="Sign in">
       <div class="auth-brand">
-        <div class="mark">cc</div>
+        <img class="brand-logo" src="/niche-logo.png" alt="Niche Waterproofing" />
         <div class="brand-text">
-          <strong>ClickClack</strong>
-          <span>OpenClaw workspace chat</span>
+          <strong>Niche OS</strong>
+          <span>Niche Waterproofing — Company Portal</span>
         </div>
       </div>
       <div class="auth-copy">
-        <h1>Welcome.</h1>
-        <p>Sign in with GitHub to join the guest room.</p>
+        <h1>Niche OS</h1>
+        <p>Niche Waterproofing team members only</p>
       </div>
-      <a class="github-login" href="/api/auth/github/start">
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-          <path fill="currentColor" d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2c-3.2.69-3.87-1.37-3.87-1.37-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.25 3.34.96.1-.74.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.94 10.94 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.12 3.05.74.81 1.18 1.84 1.18 3.1 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.13v3.16c0 .31.21.67.8.56 4.56-1.52 7.85-5.83 7.85-10.91C23.5 5.65 18.35.5 12 .5z"/>
-        </svg>
-        Continue with GitHub
-      </a>
-      <p class="auth-foot">Any GitHub account can join.</p>
+      {#if authError}
+        <p class="auth-error">{authError}</p>
+      {/if}
+      <a class="logto-signin" href="/api/auth/logto/login" style="display:inline-block;margin:18px auto 6px;padding:14px 28px;background:#0B6BCB;color:#fff;font-weight:600;font-size:1.05rem;border-radius:10px;text-decoration:none;text-align:center;">Sign In &rarr;</a>
+      <p class="auth-hint">Phone number or Google (internal team)</p>
+      <div class="telegram-login">
+        <div id="telegram-login-container"></div>
+      </div>
+      <p class="auth-foot">Access is restricted to Niche Waterproofing team members.</p>
     </section>
   </main>
 {:else}
@@ -2195,17 +2285,20 @@
     {status}
     {connected}
     {sidebarCollapsed}
-    {channels}
+    channels={visibleChannels}
+    topics={activeTopics}
     {directConversations}
     {recentPeople}
     currentUser={user}
     {selectedChannelID}
     {selectedDirectID}
+    {selectedTopicID}
     {selectedProfile}
     onToggleCollapse={() => (sidebarCollapsed = !sidebarCollapsed)}
     hrefForChannel={(channelID) => appHref(selectedWorkspaceID, channelID)}
     hrefForDirect={(conversationID) => appHref(selectedWorkspaceID, conversationID)}
     onSelectChannel={(channelID) => void selectChannel(channelID)}
+    onSelectTopic={(channelID, topicID) => void selectTopic(channelID, topicID)}
     onCreateChannel={() => (showCreateChannel = true)}
     onSelectDirect={(conversationID) => void selectDirectConversation(conversationID)}
     onCreateDirect={() => (showCreateDirect = true)}
@@ -2236,7 +2329,7 @@
     />
 
     <MessageList
-      {messages}
+      messages={displayMessages}
       {selectedDirect}
       {selectedChannel}
       restoreState={viewRestoreState}

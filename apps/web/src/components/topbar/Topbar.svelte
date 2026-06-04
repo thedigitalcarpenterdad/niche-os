@@ -40,7 +40,7 @@
     {:else if selectedChannel}
       <h1 class="with-glyph channel">{`#${selectedChannel.name}`}</h1>
     {:else}
-      <h1 class="with-glyph">ClickClack</h1>
+      <h1 class="with-glyph">Niche OS</h1>
     {/if}
     <span class="topbar-divider" aria-hidden="true"></span>
     <p class="topbar-meta">{workspaceName || "no workspace"}</p>

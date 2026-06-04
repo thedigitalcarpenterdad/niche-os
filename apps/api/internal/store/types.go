@@ -713,3 +713,14 @@ type Store interface {
 	GetSessionUser(ctx context.Context, token string) (User, error)
 	GetBotTokenAuth(ctx context.Context, token string) (BotTokenAuth, error)
 }
+
+// TelegramWhitelistEntry describes a whitelisted Telegram account used by the
+// Telegram Login Widget auth flow.
+type TelegramWhitelistEntry struct {
+	TelegramID       string
+	TelegramUsername string
+	DisplayName      string
+	Role             string
+	Workspace        string
+	Allowed          bool
+}

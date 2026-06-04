@@ -32,8 +32,8 @@
 </script>
 
 <nav id="workspace-navigation" class="guild-rail" aria-label="Workspaces">
-  <a class="guild home" title="ClickClack home" href="/">
-    <span>cc</span>
+  <a class="guild home" title="Niche OS home" href="/">
+    <img src="/niche-mark.svg" alt="Niche" width="30" height="30" />
   </a>
   <div class="guild-divider" aria-hidden="true"></div>
   <div class="guild-list">

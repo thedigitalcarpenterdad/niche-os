@@ -17,6 +17,14 @@ type Config struct {
 	GitHubClientSecret string `json:"github_client_secret"`
 	GitHubAllowedOrg   string `json:"github_allowed_org"`
 	GitHubModeratorOrg string `json:"github_moderator_org"`
+	GoogleClientID     string `json:"google_client_id"`
+	GoogleClientSecret string `json:"google_client_secret"`
+	GoogleAllowedDomain string `json:"google_allowed_domain"`
+	OIDCClientID        string `json:"oidc_client_id"`
+	OIDCClientSecret    string `json:"oidc_client_secret"`
+	OIDCIssuer          string `json:"oidc_issuer"`
+	TelegramBotToken    string `json:"telegram_bot_token"`
+	TelegramBotUsername string `json:"telegram_bot_username"`
 	PushoverAPIToken   string `json:"pushover_api_token"`
 	R2AccountID        string `json:"r2_account_id"`
 	R2AccessKeyID      string `json:"r2_access_key_id"`
@@ -77,6 +85,30 @@ func Load(path string) (Config, error) {
 	}
 	if env := os.Getenv("CLICKCLACK_GITHUB_MODERATOR_ORG"); env != "" {
 		cfg.GitHubModeratorOrg = env
+	}
+	if env := os.Getenv("CLICKCLACK_GOOGLE_CLIENT_ID"); env != "" {
+		cfg.GoogleClientID = env
+	}
+	if env := os.Getenv("CLICKCLACK_GOOGLE_CLIENT_SECRET"); env != "" {
+		cfg.GoogleClientSecret = env
+	}
+	if env := os.Getenv("CLICKCLACK_GOOGLE_ALLOWED_DOMAIN"); env != "" {
+		cfg.GoogleAllowedDomain = env
+	}
+	if env := os.Getenv("CLICKCLACK_OIDC_CLIENT_ID"); env != "" {
+		cfg.OIDCClientID = env
+	}
+	if env := os.Getenv("CLICKCLACK_OIDC_CLIENT_SECRET"); env != "" {
+		cfg.OIDCClientSecret = env
+	}
+	if env := os.Getenv("CLICKCLACK_OIDC_ISSUER"); env != "" {
+		cfg.OIDCIssuer = env
+	}
+	if env := os.Getenv("CLICKCLACK_TELEGRAM_BOT_TOKEN"); env != "" {
+		cfg.TelegramBotToken = env
+	}
+	if env := os.Getenv("CLICKCLACK_TELEGRAM_BOT_USERNAME"); env != "" {
+		cfg.TelegramBotUsername = env
 	}
 	if env := os.Getenv("CLICKCLACK_PUSHOVER_API_TOKEN"); env != "" {
 		cfg.PushoverAPIToken = env

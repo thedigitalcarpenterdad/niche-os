@@ -82,6 +82,15 @@ func serve(args []string) error {
 	flags.String("uploads", defaultUploads(), "upload storage URL")
 	configPath := flags.String("config", "", "config file")
 	flags.Bool("dev-bootstrap", false, "create a local owner/workspace/channel if no user exists")
+	flags.String("public-url", "", "public base URL (used for OAuth redirect URIs)")
+	flags.String("google-client-id", "", "Google OAuth client ID")
+	flags.String("google-client-secret", "", "Google OAuth client secret")
+	flags.String("google-allowed-domain", "", "restrict Google login to this Workspace domain")
+	flags.String("oidc-client-id", "", "OIDC client ID (Logto)")
+	flags.String("oidc-client-secret", "", "OIDC client secret (Logto)")
+	flags.String("oidc-issuer", "", "OIDC issuer URL (e.g. https://auth.nichewaterproofing.com/oidc)")
+	flags.String("telegram-bot-token", "", "Telegram Login Widget bot token")
+	flags.String("telegram-bot-username", "", "Telegram Login Widget bot username")
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
@@ -129,6 +138,22 @@ func serve(args []string) error {
 			PublicURL:    cfg.PublicURL,
 			AllowedOrg:   cfg.GitHubAllowedOrg,
 			ModeratorOrg: cfg.GitHubModeratorOrg,
+		},
+		GoogleOAuth: httpapi.GoogleOAuthConfig{
+			ClientID:      cfg.GoogleClientID,
+			ClientSecret:  cfg.GoogleClientSecret,
+			AllowedDomain: cfg.GoogleAllowedDomain,
+			PublicURL:     cfg.PublicURL,
+		},
+		OIDC: httpapi.OIDCConfig{
+			ClientID:     cfg.OIDCClientID,
+			ClientSecret: cfg.OIDCClientSecret,
+			Issuer:       cfg.OIDCIssuer,
+			PublicURL:    cfg.PublicURL,
+		},
+		TelegramAuth: httpapi.TelegramAuthConfig{
+			BotToken:    cfg.TelegramBotToken,
+			BotUsername: cfg.TelegramBotUsername,
 		},
 		PushNotifier: pushNotifier,
 	})
@@ -514,6 +539,24 @@ func applyFlagOverrides(flags *flag.FlagSet, cfg *config.Config) {
 			cfg.Uploads = f.Value.String()
 		case "dev-bootstrap":
 			cfg.DevBootstrap = f.Value.String() == "true"
+		case "public-url":
+			cfg.PublicURL = f.Value.String()
+		case "google-client-id":
+			cfg.GoogleClientID = f.Value.String()
+		case "google-client-secret":
+			cfg.GoogleClientSecret = f.Value.String()
+		case "google-allowed-domain":
+			cfg.GoogleAllowedDomain = f.Value.String()
+		case "oidc-client-id":
+			cfg.OIDCClientID = f.Value.String()
+		case "oidc-client-secret":
+			cfg.OIDCClientSecret = f.Value.String()
+		case "oidc-issuer":
+			cfg.OIDCIssuer = f.Value.String()
+		case "telegram-bot-token":
+			cfg.TelegramBotToken = f.Value.String()
+		case "telegram-bot-username":
+			cfg.TelegramBotUsername = f.Value.String()
 		}
 	})
 }

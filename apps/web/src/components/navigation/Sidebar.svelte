@@ -1,7 +1,7 @@
 <script lang="ts">
   import Avatar from "../avatar/Avatar.svelte";
   import { avatarHue, directConversationForUser, handleLabel } from "../../lib/chat/people";
-  import type { Channel, DirectConversation, User } from "../../lib/types";
+  import type { Channel, DirectConversation, Topic, User } from "../../lib/types";
   import ChannelList from "./ChannelList.svelte";
   import DirectMessageList from "./DirectMessageList.svelte";
 
@@ -11,16 +11,19 @@
     connected: boolean;
     sidebarCollapsed: boolean;
     channels: Channel[];
+    topics: Topic[];
     directConversations: DirectConversation[];
     recentPeople: User[];
     currentUser: User | null;
     selectedChannelID: string;
     selectedDirectID: string;
+    selectedTopicID: string;
     selectedProfile: User | null;
     onToggleCollapse: () => void;
     hrefForChannel: (channelID: string) => string;
     hrefForDirect: (conversationID: string) => string;
     onSelectChannel: (channelID: string) => void;
+    onSelectTopic: (channelID: string, topicID: string) => void;
     onCreateChannel: () => void;
     onSelectDirect: (conversationID: string) => void;
     onCreateDirect: () => void;
@@ -34,16 +37,19 @@
     connected,
     sidebarCollapsed,
     channels,
+    topics,
     directConversations,
     recentPeople,
     currentUser,
     selectedChannelID,
     selectedDirectID,
+    selectedTopicID,
     selectedProfile,
     onToggleCollapse,
     hrefForChannel,
     hrefForDirect,
     onSelectChannel,
+    onSelectTopic,
     onCreateChannel,
     onSelectDirect,
     onCreateDirect,
@@ -85,10 +91,13 @@
   <div class="sidebar-scroll">
     <ChannelList
       {channels}
+      {topics}
       {selectedChannelID}
       {selectedDirectID}
+      {selectedTopicID}
       {hrefForChannel}
       {onSelectChannel}
+      {onSelectTopic}
       {onCreateChannel}
     />
 

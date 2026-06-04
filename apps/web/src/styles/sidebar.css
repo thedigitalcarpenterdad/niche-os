@@ -41,7 +41,7 @@
 }
 
 .guild-rail .guild.home {
-  background: linear-gradient(135deg, var(--accent), #b46cff);
+  background: linear-gradient(135deg, #08304a, #16466a);
   color: white;
   font-weight: 800;
 }

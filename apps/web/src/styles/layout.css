@@ -6,8 +6,8 @@
   place-items: center;
   padding: 32px;
   background:
-    radial-gradient(700px 500px at 30% 20%, rgba(111, 126, 255, 0.18), transparent 60%),
-    radial-gradient(700px 500px at 80% 90%, rgba(255, 110, 196, 0.12), transparent 60%), var(--bg);
+    radial-gradient(700px 500px at 30% 20%, rgba(8, 48, 74, 0.22), transparent 60%),
+    radial-gradient(700px 500px at 80% 90%, rgba(252, 215, 75, 0.16), transparent 60%), var(--bg);
 }
 
 .auth-panel {
@@ -28,17 +28,27 @@
   gap: 12px;
 }
 
+.auth-brand .brand-logo {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 4px;
+  box-shadow: 0 10px 24px -8px rgba(8, 48, 74, 0.4);
+}
+
 .auth-brand .mark {
   width: 44px;
   height: 44px;
   display: grid;
   place-items: center;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--accent), #b46cff);
+  background: linear-gradient(135deg, #08304a, #16466a);
   color: white;
   font-weight: 800;
   letter-spacing: -0.02em;
-  box-shadow: 0 10px 24px -8px rgba(111, 126, 255, 0.7);
+  box-shadow: 0 10px 24px -8px rgba(8, 48, 74, 0.6);
 }
 
 .auth-brand .brand-text strong {
@@ -72,34 +82,71 @@
   line-height: 1.5;
 }
 
-.github-login {
+.google-login {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  min-height: 46px;
+  gap: 12px;
+  min-height: 48px;
   border-radius: 12px;
-  background: #0d1117;
-  color: white;
+  background: #ffffff;
+  color: #1f1f1f;
   font-weight: 600;
+  font-size: 15px;
   text-decoration: none;
-  border: 1px solid #2b2f36;
+  border: 1px solid #dadce0;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.18);
   transition:
     transform 80ms ease,
     background 120ms ease,
+    box-shadow 120ms ease,
     border-color 120ms ease;
 }
 
-.github-login:hover {
-  background: #161b22;
-  border-color: #3f4750;
+.google-login:hover {
+  background: #f7f8f8;
+  border-color: #d2d4d7;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3);
   transform: translateY(-1px);
+}
+
+.google-login svg {
+  flex: none;
 }
 
 .auth-foot {
   margin: 0;
   color: var(--muted-2);
   font-size: 12px;
+  text-align: center;
+}
+
+.telegram-login {
+  display: grid;
+  place-items: center;
+  min-height: 52px;
+  gap: 8px;
+}
+
+.telegram-login iframe {
+  border-radius: 8px !important;
+}
+
+.auth-hint {
+  margin: 0;
+  color: var(--muted-2);
+  font-size: 13px;
+}
+
+.auth-error {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(220, 53, 69, 0.12);
+  border: 1px solid rgba(220, 53, 69, 0.4);
+  color: #ffb4bd;
+  font-size: 13px;
+  line-height: 1.4;
   text-align: center;
 }
 

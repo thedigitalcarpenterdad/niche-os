@@ -29,6 +29,9 @@ type Server struct {
 	uploadDir      string
 	uploadStorage  uploadstore.Store
 	githubOAuth    GitHubOAuthConfig
+	googleOAuth    GoogleOAuthConfig
+	oidc           OIDCConfig
+	telegramAuth   TelegramAuthConfig
 	disableDevAuth bool
 	pushNotifier   PushNotifier
 }
@@ -53,6 +56,9 @@ type Options struct {
 	UploadDir      string
 	UploadStorage  uploadstore.Store
 	GitHubOAuth    GitHubOAuthConfig
+	GoogleOAuth    GoogleOAuthConfig
+	OIDC           OIDCConfig
+	TelegramAuth   TelegramAuthConfig
 	DisableDevAuth bool
 	PushNotifier   PushNotifier
 }
@@ -68,6 +74,9 @@ func New(st store.Store, hub *realtime.Hub, options Options) *Server {
 		uploadDir:      options.UploadDir,
 		uploadStorage:  uploadStorage,
 		githubOAuth:    options.GitHubOAuth.withDefaults(),
+		googleOAuth:    options.GoogleOAuth.withDefaults(),
+		oidc:           options.OIDC.withDefaults(),
+		telegramAuth:   options.TelegramAuth,
 		disableDevAuth: options.DisableDevAuth,
 		pushNotifier:   options.PushNotifier,
 	}
@@ -85,6 +94,14 @@ func (s *Server) Handler() http.Handler {
 		r.Post("/auth/magic/consume", s.consumeMagicLink)
 		r.Get("/auth/github/start", s.githubStart)
 		r.Get("/auth/github/callback", s.githubCallback)
+		r.Get("/auth/google/login", s.googleStart)
+		r.Get("/auth/google/callback", s.googleCallback)
+		r.Get("/auth/logto/login", s.oidcStart)
+		r.Get("/auth/logto/callback", s.oidcCallback)
+		r.Get("/auth/oidc/login", s.oidcStart)
+		r.Get("/auth/oidc/callback", s.oidcCallback)
+		r.Get("/auth/telegram/login", s.handleTelegramLogin)
+		r.Get("/auth/telegram/callback", s.handleTelegramCallback)
 		r.Get("/me", s.me)
 		r.Patch("/me", s.updateMe)
 		r.Get("/workspaces", s.listWorkspaces)
