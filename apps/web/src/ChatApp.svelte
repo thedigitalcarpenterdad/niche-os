@@ -204,7 +204,7 @@
       if (error instanceof APIError && (error.status === 401 || error.status === 403)) {
         authRequired = true;
         status = "auth";
-        await loadTelegramAuthConfig();
+        
         return;
       }
       status = error instanceof Error ? error.message : "Could not load Niche OS";
@@ -234,12 +234,10 @@
 
   function mountTelegramWidget() {
     if (!telegramEnabled || !telegramBotUsername || telegramWidgetMounted) return;
-    const container = document.getElementById("telegram-login-container");
     if (!container) return;
     container.innerHTML = "";
     const script = document.createElement("script");
     script.src = "https://telegram.org/js/telegram-widget.js?22";
-    script.setAttribute("data-telegram-login", telegramBotUsername);
     script.setAttribute("data-size", "large");
     script.setAttribute(
       "data-auth-url",
@@ -2235,9 +2233,6 @@
       {/if}
       <a class="logto-signin" href="/api/auth/logto/login" style="display:inline-block;margin:18px auto 6px;padding:14px 28px;background:#0B6BCB;color:#fff;font-weight:600;font-size:1.05rem;border-radius:10px;text-decoration:none;text-align:center;">Sign In &rarr;</a>
       <p class="auth-hint">Phone number or Google (internal team)</p>
-      <div class="telegram-login">
-        <div id="telegram-login-container"></div>
-      </div>
       <p class="auth-foot">Access is restricted to Niche Waterproofing team members.</p>
     </section>
   </main>
