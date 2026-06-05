@@ -163,7 +163,7 @@
     : "";
   $: sidePanelOpen = selectedThread !== null || selectedProfile !== null;
   $: recentPeople = collectRecentPeople(messages, directConversations, user?.id || "");
-  $: workspaceBots = (moderationMembers || []).filter((m) => m.role === 'bot' || m.user?.kind === 'bot').map((m) => m.user);
+  $: workspaceBots = (moderationMembers || []).filter((m: User) => m.kind === 'bot');
   $: mentionPeople = collectMentionPeople(user, recentPeople, moderationMembers, selectedDirect);
   $: if (replyContext === "channel" && replyTarget && !messages.some((m) => m.id === replyTarget?.id)) clearReplyTarget();
   $: if (replyContext === "dm" && replyTarget && !messages.some((m) => m.id === replyTarget?.id)) clearReplyTarget();
@@ -191,29 +191,30 @@
   });
 
   function openAgentChat(agent: any) {
-    // Find the bot user matching this agent, preferring a name match, then NicheBot, then any bot.
-    const needle = String(agent?.id || agent?.name || "").toLowerCase().replace(/[-_]/g, " ").trim();
-    const byName = needle
-      ? workspaceBots.find((b: User) => (b.display_name || "").toLowerCase().includes(needle))
-      : undefined;
-    const niche = workspaceBots.find((b: User) => (b.display_name || "").toLowerCase().includes("nichebot"));
-    const bot = byName || niche || workspaceBots[0];
+    // Find the bot user matching this agent, or open NicheBot by default
+    const bot = workspaceBots.find((b: User) => 
+      b.display_name.toLowerCase().includes(agent.id.replace('-', ' ')) ||
+      b.display_name.toLowerCase().includes('nichebot') ||
+      b.kind === 'bot'
+    );
     if (bot) {
-      // Directly open (or create) the DM with this bot instead of an empty picker.
-      void startDirectWithUser(bot.id);
-    } else {
-      showCreateDirect = true;
+      const conversation = directConversations.find(
+        (dc: any) => dc.members?.includes(bot.id) || dc.user_id === bot.id
+      );
+      if (conversation) {
+        void selectDirectConversation(conversation.id);
+      } else {
+        // Post a greeting to NicheBot to initiate conversation
+        showCreateDirect = true;
+      }
     }
   }
 
-  function openVoiceAgent(agent: any) {
-    // Map the agent (or bot) to its Talkie voice-room slug.
-    // AGENTS entries already carry a fully-formed talkieSlug (e.g. "builder-internal").
-    const rawName = agent?.name || agent?.display_name || "voice";
-    const nameSlug = String(rawName).toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-    const slug = agent?.talkieSlug || (nameSlug + "-internal");
-    voiceAgentUrl = "https://talkie.nichewaterproofing.com/job/" + slug;
-    voiceAgentBot = { display_name: rawName } as any;
+  function openVoiceAgent(bot: any) {
+    // Map bot/agent to Talkie job slug
+    const slug = (bot.talkieSlug || bot.display_name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''));
+    voiceAgentUrl = `https://talkie.nichewaterproofing.com/job/${slug}-internal`;
+    voiceAgentBot = bot;
     voiceAgentOpen = true;
   }
 
@@ -1485,7 +1486,7 @@
 
   async function sendMessage() {
     const body = messageBody.trim();
-    if (!body && !pendingUpload) return;
+    if (!body) return;
     if (!selectedChannelID && !selectedDirectID) {
       status = "pick or create a channel";
       return;
@@ -1780,29 +1781,6 @@
     const data = await api<{ upload: Upload }>("/api/uploads", { method: "POST", body: form });
     pendingUpload = data.upload;
     input.value = "";
-  }
-
-  async function sendVoiceNote(blob: Blob, durationMs: number) {
-    if (!selectedWorkspaceID) return;
-    if (!selectedChannelID && !selectedDirectID) return;
-    const ext = blob.type.includes('ogg') ? 'ogg' : 'webm';
-    const file = new File([blob], `voice-note-${Date.now()}.${ext}`, { type: blob.type });
-    const form = new FormData();
-    form.set("workspace_id", selectedWorkspaceID);
-    form.set("file", file);
-    if (durationMs > 0) form.set("duration_ms", String(Math.round(durationMs)));
-    const data = await api<{ upload: Upload }>("/api/uploads", { method: "POST", body: form });
-    const upload = data.upload;
-    const draft: OutgoingDraft = {
-      body: "",
-      topicID: selectedTopicID || undefined,
-      upload,
-      workspaceID: selectedWorkspaceID,
-      channelID: selectedChannelID || undefined,
-      directConversationID: selectedDirectID || undefined,
-      viewKey: currentConversationKey(),
-    };
-    await dispatchDraft(draft);
   }
 
   async function loadDirectConversations() {
@@ -2221,9 +2199,6 @@
     showProfileSettings = false;
     showCreateChannel = false;
     showCreateDirect = false;
-    voiceAgentOpen = false;
-    voiceAgentBot = null;
-    voiceAgentUrl = '';
   }
 
   function closeMobileNav() {
@@ -2418,7 +2393,6 @@
       onToggleGif={() => (showGifPicker = !showGifPicker)}
       onGifQuery={(value) => (gifQuery = value)}
       onPickGif={pickGif}
-      onVoiceNote={(blob, dur) => void sendVoiceNote(blob, dur)}
     />
   </main>
 
@@ -2510,26 +2484,5 @@
 {/if}
 {#if selectedImage}
   <ImageViewer url={selectedImage.url} title={selectedImage.title} onClose={closeModal} />
-{/if}
-{#if voiceAgentOpen}
-  <div class="modal-scrim" role="presentation">
-    <button class="modal-backdrop" type="button" aria-label="Close voice agent" onclick={closeVoiceAgent}></button>
-    <section class="profile-modal voice-agent-modal" aria-label="Voice agent">
-      <header>
-        <div>
-          <p>Voice Agent</p>
-          <h2>{voiceAgentBot?.display_name || Voice}</h2>
-        </div>
-        <button type="button" aria-label="Close voice agent" onclick={closeVoiceAgent}>×</button>
-      </header>
-      <div class="voice-agent-frame">
-        <iframe
-          title="Voice agent"
-          src={voiceAgentUrl}
-          allow="microphone; autoplay; camera"
-        ></iframe>
-      </div>
-    </section>
-  </div>
 {/if}
 {/if}

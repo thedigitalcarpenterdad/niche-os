@@ -21,3 +21,7 @@ playwright-report/
 cloudflare-seed/uploads/*
 !cloudflare-seed/uploads/.gitkeep
 supabase/.temp/
+apps/web/.env
+*.bak
+*.bak-*
+apps/api/internal/webassets/dist/

@@ -26,6 +26,47 @@
   let pdfThumbnailFailed = $state(false);
   let loadedDurationLabel = $state("");
   let durationLabel = $derived(loadedDurationLabel || formatDuration(upload.duration_ms ?? 0));
+
+  // Voice note player state
+  let audioEl: HTMLAudioElement | null = $state(null);
+  let playing = $state(false);
+  let playedFraction = $state(0);
+  let liveDuration = $state(0);
+
+  const waveformBars = $derived(generateWaveform(upload.filename, 28));
+  const displayTime = $derived(liveDuration > 0 ? formatDuration(liveDuration * 1000) : durationLabel || '0:00');
+
+  function generateWaveform(seed: string, count: number): number[] {
+    let h = 0;
+    for (let i = 0; i < seed.length; i++) h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0;
+    return Array.from({ length: count }, () => {
+      h = (Math.imul(h, 1664525) + 1013904223) | 0;
+      return 4 + Math.abs(h % 20);
+    });
+  }
+
+  function toggleAudio() {
+    if (!audioEl) return;
+    if (playing) { audioEl.pause(); playing = false; }
+    else { void audioEl.play(); playing = true; }
+  }
+
+  function handleLoadedMeta() {
+    if (!audioEl || !isFinite(audioEl.duration)) return;
+    liveDuration = audioEl.duration;
+  }
+
+  function handleTimeUpdate() {
+    if (!audioEl || !audioEl.duration || !isFinite(audioEl.duration)) return;
+    playedFraction = audioEl.currentTime / audioEl.duration;
+    liveDuration = audioEl.duration - audioEl.currentTime; // countdown like WhatsApp
+  }
+
+  function handleEnded() {
+    playing = false;
+    playedFraction = 0;
+    if (audioEl) { audioEl.currentTime = 0; liveDuration = audioEl.duration; }
+  }
   let cleanupPDFThumbnail: (() => void) | null = null;
 
   let contentType = $derived((upload.content_type || "").split(";")[0].trim().toLowerCase());
@@ -237,17 +278,33 @@
     </div>
   </div>
 {:else if isAudio}
-  <div class="audio-attachment">
-    <div class="audio-attachment__meta">
-      <span class="file-icon" aria-hidden="true">♪</span>
-      <span>
-        <strong>{upload.filename}</strong>
-        <small>{formatBytes(upload.byte_size)}</small>
-      </span>
+  <div class="voice-note" role="group" aria-label="Voice note">
+    <button
+      type="button"
+      class="voice-note__play"
+      aria-label={playing ? 'Pause' : 'Play voice note'}
+      onclick={toggleAudio}
+    >
+      {#if playing}
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor"/></svg>
+      {:else}
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M8 5.5v13l11-6.5z"/></svg>
+      {/if}
+    </button>
+    <div class="voice-note__wave" aria-hidden="true">
+      {#each waveformBars as barH, i}
+        <div class="voice-note__bar" class:played={playedFraction > 0 && i / waveformBars.length < playedFraction} style="height:{barH}px"></div>
+      {/each}
     </div>
-    <audio controls preload="metadata" src={url}>
-      <a href={url} target="_blank" rel="noreferrer">{upload.filename}</a>
-    </audio>
+    <span class="voice-note__duration">{displayTime}</span>
+    <audio
+      bind:this={audioEl}
+      src={url}
+      preload="metadata"
+      onloadedmetadata={handleLoadedMeta}
+      ontimeupdate={handleTimeUpdate}
+      onended={handleEnded}
+    ></audio>
   </div>
 {:else if canPreviewDocument}
   <div class="document-attachment">

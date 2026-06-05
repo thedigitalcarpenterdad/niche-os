@@ -357,14 +357,16 @@
 }
 
 .nav-item .hash {
-  color: var(--muted);
-  font-weight: 600;
+  color: var(--text);
+  font-weight: 500;
   width: 14px;
   text-align: center;
+  opacity: 0.5;
 }
 
 .nav-item.active .hash {
-  color: var(--accent);
+  color: inherit;
+  opacity: 0.7;
 }
 
 .nav-label {
@@ -511,4 +513,143 @@ button.ghost {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* AI Agents voice */
+.agent-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0;
+}
+
+.agent-chat-link {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+  padding: 5px 4px 5px 10px;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  color: var(--text);
+  text-decoration: none;
+  transition: background 100ms ease;
+}
+
+.agent-chat-link:hover,
+.agent-row.active .agent-chat-link {
+  background: var(--hover);
+}
+
+.agent-voice-btn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  opacity: 0;
+  transition: opacity 100ms ease, background 100ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 4px;
+}
+
+.agent-row:hover .agent-voice-btn {
+  opacity: 1;
+}
+
+.agent-voice-btn:hover {
+  background: var(--hover-strong);
+}
+
+/* ─── AI Agents Card Section ─── */
+.agents-section {
+  padding: 0 0 8px;
+}
+
+.agents-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 8px 0;
+}
+
+.agent-card {
+  display: flex;
+  gap: 8px;
+  padding: 7px 8px 7px 8px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.agent-card:hover {
+  background: var(--hover);
+  border-color: var(--line-strong);
+}
+
+.agent-card-icon {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.agent-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.agent-card-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-strong);
+  line-height: 1.2;
+}
+
+.agent-card-desc {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agent-card-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.agent-action-btn {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 20px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 100ms ease, border-color 100ms ease;
+  white-space: nowrap;
+}
+
+.agent-action-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast, white);
+}
+
+.agent-action-voice:hover {
+  background: var(--success);
+  border-color: var(--success);
 }

@@ -47,18 +47,18 @@
     --panel: #0a2a3c;
     --panel-2: #0e344a;
     --panel-3: #134058;
-    --hover: rgba(252, 215, 75, 0.06);
-    --hover-strong: rgba(252, 215, 75, 0.1);
+    --hover: rgba(77, 159, 214, 0.06);
+    --hover-strong: rgba(77, 159, 214, 0.1);
     --line: rgba(255, 255, 255, 0.08);
     --line-strong: rgba(255, 255, 255, 0.14);
     --text: #e6eef4;
     --text-strong: #ffffff;
     --muted: #8fa3b2;
     --muted-2: #5f7988;
-    --accent: #fcd74b;
-    --accent-2: #f2c230;
-    --accent-soft: rgba(252, 215, 75, 0.16);
-    --accent-glow: 0 0 0 1px rgba(252, 215, 75, 0.45), 0 8px 30px -12px rgba(252, 215, 75, 0.5);
+    --accent: #4d9fd6;
+    --accent-2: #3a8abf;
+    --accent-soft: rgba(77, 159, 214, 0.16);
+    --accent-glow: 0 0 0 1px rgba(77, 159, 214, 0.45), 0 8px 30px -12px rgba(77, 159, 214, 0.5);
     --success: #2ecc71;
     --warn: #fcd74b;
     --danger: #ff6b6b;
@@ -80,7 +80,7 @@ body {
 body {
   background:
     radial-gradient(1000px 600px at 0% 0%, rgba(8, 48, 74, 0.1), transparent 60%),
-    radial-gradient(900px 700px at 100% 100%, rgba(252, 215, 75, 0.08), transparent 60%), var(--bg);
+    radial-gradient(900px 700px at 100% 100%, rgba(77, 159, 214, 0.08), transparent 60%), var(--bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

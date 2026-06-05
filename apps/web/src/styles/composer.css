@@ -433,3 +433,171 @@
   font-size: 10.5px;
   color: var(--text);
 }
+
+/* ---- Voice Recording ---- */
+.composer-row.is-recording {
+  grid-template-columns: auto 1fr auto;
+}
+
+.voice-recording-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 4px;
+  min-height: 44px;
+}
+
+.voice-pulse {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e53e3e;
+  flex-shrink: 0;
+  animation: vpulse 1s ease-in-out infinite;
+}
+
+@keyframes vpulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.75); }
+}
+
+.voice-timer {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text-strong);
+  min-width: 38px;
+}
+
+.voice-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.voice-cancel-btn {
+  color: var(--danger, #e53e3e) !important;
+}
+
+.mic-btn {
+  background: var(--panel-3) !important;
+  color: var(--muted) !important;
+}
+
+.mic-btn:hover:not(:disabled) {
+  background: var(--hover-strong) !important;
+  color: var(--text-strong) !important;
+  transform: none !important;
+}
+
+/* ---- Voice Note Player (in messages) ---- */
+.voice-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  max-width: 280px;
+  width: 100%;
+}
+
+.voice-note__play {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--accent);
+  color: white;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: background 120ms ease, transform 80ms ease;
+  cursor: pointer;
+}
+
+.voice-note__play:hover {
+  background: var(--accent-2, var(--accent));
+  transform: scale(1.08);
+}
+
+.voice-note__wave {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  height: 28px;
+}
+
+.voice-note__bar {
+  width: 3px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--accent) 35%, var(--muted));
+  transition: background 60ms linear;
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.voice-note__bar.played {
+  background: var(--accent);
+}
+
+.voice-note__duration {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ---- Voice Note Preview (stopped, pending send/transcribe) ---- */
+.composer-row.is-voice-preview {
+  grid-template-columns: auto 1fr auto auto;
+}
+
+.voice-transcribe-btn {
+  align-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 36px;
+  margin-top: calc(var(--composer-text-padding-block) + (var(--composer-line-height) - 36px) / 2);
+  padding: 0 10px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 120ms ease, transform 80ms ease;
+}
+
+.voice-transcribe-btn:hover {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  transform: translateY(-1px);
+}
+
+.voice-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--accent);
+  border-top-color: transparent;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: vspin 0.7s linear infinite;
+}
+
+@keyframes vspin {
+  to { transform: rotate(360deg); }
+}
+
+.voice-error {
+  color: var(--danger, #e53e3e);
+  font-size: 12px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

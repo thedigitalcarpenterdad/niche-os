@@ -1401,7 +1401,7 @@ func (q *Queries) InsertHumanUser(ctx context.Context, arg InsertHumanUserParams
 }
 
 const insertIdentity = `-- name: InsertIdentity :exec
-INSERT OR IGNORE INTO identities (id, user_id, provider, provider_subject, email, created_at)
+INSERT INTO identities (id, user_id, provider, provider_subject, email, created_at)
 VALUES (?1, ?2, ?3, ?4, ?5, ?6)
 `
 

@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -89,9 +88,6 @@ func (s *Server) Handler() http.Handler {
 	r.Use(middleware.RequestLogger(&pathOnlyLogFormatter{}))
 	r.Use(middleware.Recoverer)
 
-	r.Get("/api/health", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, http.StatusOK, map[string]any{"status": "ok"})
-	})
 	r.Route("/api", func(r chi.Router) {
 		r.Use(s.requireCookieCSRF)
 		r.Post("/auth/magic/request", s.requestMagicLink)
@@ -162,12 +158,6 @@ func (s *Server) Handler() http.Handler {
 		r.Post("/dms/{conversation_id}/read", s.markDirectRead)
 		r.Post("/hooks/mattermost/{channel_id}", s.mattermostWebhook)
 		r.Post("/hooks/slash/{channel_id}", s.slashCommand)
-		r.NotFound(func(w http.ResponseWriter, r *http.Request) {
-			writeError(w, http.StatusNotFound, errors.New("route not found"))
-		})
-		r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
-			writeError(w, http.StatusMethodNotAllowed, errors.New("method not allowed"))
-		})
 	})
 
 	r.NotFound(s.serveSPA)
@@ -951,8 +941,6 @@ func directConversationIDFromEvent(event store.Event) string {
 	}
 }
 
-var errInvalidSession = errors.New("authentication required")
-
 func (s *Server) currentActor(r *http.Request) (actor, error) {
 	if auth := r.Header.Get("Authorization"); strings.HasPrefix(auth, "Bearer ") {
 		token := strings.TrimSpace(strings.TrimPrefix(auth, "Bearer "))
@@ -965,17 +953,11 @@ func (s *Server) currentActor(r *http.Request) (actor, error) {
 			}, nil
 		}
 		user, err := s.store.GetSessionUser(r.Context(), token)
-		if err != nil {
-			return actor{}, errInvalidSession
-		}
-		return actor{user: user}, nil
+		return actor{user: user}, err
 	}
 	if cookie, err := r.Cookie("cc_session"); err == nil && cookie.Value != "" {
 		user, err := s.store.GetSessionUser(r.Context(), cookie.Value)
-		if err != nil {
-			return actor{}, errInvalidSession
-		}
-		return actor{user: user}, nil
+		return actor{user: user}, err
 	}
 	if s.disableDevAuth {
 		return actor{}, errors.New("authentication required")
@@ -1145,10 +1127,6 @@ func writeStoreError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusForbidden, err)
 	case errors.Is(err, store.ErrMessageNotWritable):
 		writeError(w, http.StatusForbidden, err)
-	case errors.Is(err, sql.ErrNoRows):
-		// Preserve the existing 400 contract for missing/not-permitted resources,
-		// but never leak the raw "sql: no rows in result set" driver string.
-		writeError(w, http.StatusBadRequest, errors.New("not found"))
 	default:
 		writeError(w, http.StatusBadRequest, err)
 	}

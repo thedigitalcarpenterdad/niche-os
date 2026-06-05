@@ -88,20 +88,6 @@ func (s *Store) EnsureDefaultWorkspaceMember(ctx context.Context, userID string)
 	}); err != nil {
 		return store.Workspace{}, err
 	}
-	// Also enroll the user into the Niche Field workspace as a member when it exists.
-	// Niche staff belong to both Internal (niche) and Field (niche-field).
-	if fieldWorkspace, ferr := sqliteWorkspaceBySlugTx(ctx, tx, "niche-field"); ferr == nil {
-		if err := qtx.InsertDefaultWorkspaceMember(ctx, storedb.InsertDefaultWorkspaceMemberParams{
-			WorkspaceID: fieldWorkspace.ID,
-			UserID:      userID,
-			Role:        "member",
-			CreatedAt:   now(),
-		}); err != nil {
-			return store.Workspace{}, err
-		}
-	} else if ferr != sql.ErrNoRows {
-		return store.Workspace{}, ferr
-	}
 	return workspace, tx.Commit()
 }
 

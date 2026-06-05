@@ -62,7 +62,7 @@ INSERT INTO users (id, display_name, avatar_url, created_at)
 VALUES (sqlc.arg(id), sqlc.arg(display_name), sqlc.arg(avatar_url), sqlc.arg(created_at));
 
 -- name: InsertIdentity :exec
-INSERT INTO identities (id, user_id, provider, provider_subject, email, created_at)
+INSERT OR IGNORE INTO identities (id, user_id, provider, provider_subject, email, created_at)
 VALUES (sqlc.arg(id), sqlc.arg(user_id), sqlc.arg(provider), sqlc.arg(provider_subject), sqlc.arg(email), sqlc.arg(created_at));
 
 -- name: FirstUser :one

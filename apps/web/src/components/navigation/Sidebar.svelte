@@ -29,6 +29,9 @@
     onCreateDirect: () => void;
     onOpenProfile: (profile: User) => void;
     onOpenSettings: () => void;
+    bots?: User[];
+    onVoiceAgent?: (bot: any) => void;
+    onAgentChat?: (agent: any) => void;
   };
 
   let {
@@ -55,7 +58,19 @@
     onCreateDirect,
     onOpenProfile,
     onOpenSettings,
+    bots = [],
+    onVoiceAgent = () => {},
+    onAgentChat = () => {},
   }: Props = $props();
+
+
+  const AGENTS = [
+    { id: 'builder',    name: 'Builder AI',        icon: '🏗️', desc: 'Job site questions, specs, drawings, docs', voice: true,  talkieSlug: 'builder-internal' },
+    { id: 'estimating', name: 'Estimating Agent',  icon: '📋', desc: 'Takeoffs, bid analysis, scope review',      voice: false, talkieSlug: '' },
+    { id: 'rfp-scout',  name: 'RFP Scout',          icon: '🔍', desc: 'FISP leads, new RFPs, deadline alerts',     voice: false, talkieSlug: '' },
+    { id: 'daily-brief',name: 'Daily Brief',        icon: '📰', desc: 'Morning project summary on demand',         voice: false, talkieSlug: '' },
+    { id: 'sub-manager',name: 'Sub Manager',        icon: '🔧', desc: 'Subcontractor comms and tracking',          voice: false, talkieSlug: '' },
+  ];
 
   function shouldHandleClientNavigation(event: MouseEvent): boolean {
     return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
@@ -109,6 +124,38 @@
       {onSelectDirect}
       {onCreateDirect}
     />
+
+    <section class="agents-section">
+      <div class="section-title">
+        <span class="caret" aria-hidden="true">▾</span>
+        <span class="label">AI Agents</span>
+      </div>
+      <div class="agents-list">
+        {#each AGENTS as agent}
+          <div class="agent-card">
+            <div class="agent-card-icon">{agent.icon}</div>
+            <div class="agent-card-body">
+              <span class="agent-card-name">{agent.name}</span>
+              <span class="agent-card-desc">{agent.desc}</span>
+              <div class="agent-card-actions">
+                <button
+                  class="agent-action-btn"
+                  type="button"
+                  onclick={() => onAgentChat(agent)}
+                >💬 Chat</button>
+                {#if agent.voice}
+                  <button
+                    class="agent-action-btn agent-action-voice"
+                    type="button"
+                    onclick={() => onVoiceAgent(agent)}
+                  >🎙️ Voice</button>
+                {/if}
+              </div>
+            </div>
+          </div>
+        {/each}
+      </div>
+    </section>
 
     <section class="nav-section">
       <div class="section-title">

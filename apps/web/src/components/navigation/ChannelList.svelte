@@ -44,8 +44,8 @@
     return map;
   });
 
-  // Channels with topics start expanded; users can collapse them.
-  let collapsed = $state<Record<string, boolean>>({});
+  // Channels start collapsed; only open on user interaction
+  let expanded = $state<Record<string, boolean>>({});
 
   function toggle(channelID: string) {
     collapsed = { ...collapsed, [channelID]: !collapsed[channelID] };
@@ -73,7 +73,7 @@
       {@const unread = channel.unread_count || 0}
       {@const channelTopics = topicsByChannel.get(channel.id) ?? []}
       {@const isChannelActive = channel.id === selectedChannelID && !selectedDirectID && !selectedTopicID}
-      {@const isOpen = channelTopics.length > 0 && !collapsed[channel.id]}
+      {@const isOpen = channelTopics.length > 0 && collapsed[channel.id] === true}
       <div class="channel-group">
         <a
           href={hrefForChannel(channel.id)}
