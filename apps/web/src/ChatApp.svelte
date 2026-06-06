@@ -161,7 +161,7 @@
   $: activeUnreadSince = activeUnreadCount > 0
     ? unreadSinceForKey(activeConversationKey, activeUnreadBoundarySeq, messageWindows)
     : "";
-  $: sidePanelOpen = selectedThread !== null || selectedProfile !== null;
+  $: sidePanelOpen = selectedProfile !== null;
   $: recentPeople = collectRecentPeople(messages, directConversations, user?.id || "");
   $: workspaceBots = (moderationMembers || []).filter((m) => m.role === 'bot' || m.user?.kind === 'bot').map((m) => m.user);
   $: mentionPeople = collectMentionPeople(user, recentPeople, moderationMembers, selectedDirect);
@@ -2442,30 +2442,9 @@
     class="thread"
     class:open={sidePanelOpen}
     inert={mobileNavOpen}
-    aria-label={selectedProfile ? "Profile pane" : "Thread pane"}
+    aria-label="Profile pane"
   >
-    {#if selectedThread}
-      <ThreadPanel
-        root={selectedThread}
-        {replies}
-        threadState={selectedThreadState}
-        {replyBody}
-        replyTarget={replyTarget && replyContext === "thread" ? replyTarget : null}
-        {mentionPeople}
-        onClose={closeSidePanel}
-        onReplyBody={(value) => (replyBody = value)}
-        onSubmitReply={() => void sendReply()}
-        onReplyKeydown={handleReplyKey}
-        onReplyFocus={() => (activeComposerContext = "thread")}
-        onReplyInputRef={(node) => (replyInput = node)}
-        onSetReplyTarget={setReplyTarget}
-        onClearReply={clearReplyTarget}
-        onActivateThreadComposer={() => (activeComposerContext = "thread")}
-        onInlineImagePointerUp={handleInlineImagePointerUp}
-        onJumpToQuote={(message) => void jumpToQuotedMessage(message)}
-        onOpenImage={openImageViewer}
-      />
-    {:else if selectedProfile}
+    {#if selectedProfile}
       <ProfilePane
         profile={selectedProfile}
         currentUser={user}
@@ -2481,8 +2460,6 @@
         onUnblock={(memberID) => void updateMemberModeration(memberID, { blocked: false, clear_timeout: true })}
         onSetStatus={() => (status = "status messages are coming soon")}
       />
-    {:else}
-      <ThreadEmptyState />
     {/if}
   </aside>
 </div>

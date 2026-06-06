@@ -770,7 +770,7 @@
           Pick a channel to get started.
         {/if}
       </strong>
-      <span>Send a message in Markdown — code fences, lists, links all work. Threads open from any message.</span>
+      <span>Send a message in Markdown — code fences, lists, links all work.</span>
     </div>
   {:else if messages.length > 0}
     <div class="messages-scroll" bind:this={scrollEl} tabindex="-1">

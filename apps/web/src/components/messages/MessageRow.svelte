@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { threadSummary } from "../../lib/chat/messages";
   import { enhanceMarkdownGifs } from "../../lib/actions/markdownGifs";
   import { time, markdown } from "../../lib/format";
   import { uploadURL } from "../../lib/uploads";
   import type { Message } from "../../lib/types";
   import MediaAttachment from "../MediaAttachment.svelte";
   import QuoteBlock from "./QuoteBlock.svelte";
+
+  const READ_MORE_THRESHOLD = 500;
 
   type Props = {
     message: Message;
@@ -26,9 +27,8 @@
     index,
     selected,
     replyContext,
-    selectedThreadID,
     onReply,
-    onOpenThread,
+    onOpenThread: _onOpenThread,
     onJumpToQuote,
     onOpenImage,
     onRetry,
@@ -37,6 +37,8 @@
 
   let isPending = $derived(message.status === "pending");
   let isFailed = $derived(message.status === "failed");
+  let isLong = $derived((message.body?.length ?? 0) > READ_MORE_THRESHOLD);
+  let expanded = $state(false);
 </script>
 
 <div
@@ -49,7 +51,18 @@
   <span class="row-stamp" aria-hidden="true">{index === 0 ? "" : time(message.created_at)}</span>
   <div class="message-content">
     <QuoteBlock {message} onJump={onJumpToQuote} />
-    <div class="markdown" use:enhanceMarkdownGifs>{@html markdown(message.body)}</div>
+    <div
+      class="markdown"
+      class:markdown-collapsed={isLong && !expanded}
+      use:enhanceMarkdownGifs
+    >{@html markdown(message.body)}</div>
+    {#if isLong && !expanded}
+      <button
+        type="button"
+        class="read-more-btn"
+        onclick={() => (expanded = true)}
+      >Read more</button>
+    {/if}
     {#if message.attachments?.length}
       <div class="attachment-grid" aria-label="Attachments">
         {#each message.attachments as attachment (attachment.id)}
@@ -86,17 +99,39 @@
         <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 17 4 12l5-5M4 12h11a5 5 0 0 1 5 5v3"/>
       </svg>
     </button>
-    <button
-      type="button"
-      aria-label="Open thread"
-      class="tooltip"
-      data-tooltip={threadSummary(message, selectedThreadID)}
-      disabled={isPending || isFailed}
-      onclick={() => onOpenThread(message)}
-    >
-      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-        <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21 12a8 8 0 0 1-11.6 7.16L3 21l1.84-6.4A8 8 0 1 1 21 12Z"/>
-      </svg>
-    </button>
   </div>
 </div>
+
+<style>
+  .markdown-collapsed {
+    max-height: 12rem;
+    overflow: hidden;
+    position: relative;
+  }
+  .markdown-collapsed::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3rem;
+    background: linear-gradient(to bottom, transparent, var(--bg-primary, #1a1a1a));
+    pointer-events: none;
+  }
+  .read-more-btn {
+    display: inline-block;
+    margin-top: 0.25rem;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--accent, #7c8cf8);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .read-more-btn:hover {
+    opacity: 0.8;
+  }
+</style>
