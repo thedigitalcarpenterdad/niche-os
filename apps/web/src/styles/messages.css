@@ -1302,3 +1302,59 @@
   background: var(--panel-2);
   color: var(--text-strong);
 }
+
+/* ---------- RESPONSIVE: MESSAGE ACTIONS ---------- */
+
+/* Touch devices (phones/tablets): always show action bar — no hover available */
+@media (hover: none) and (pointer: coarse) {
+  .message-actions {
+    opacity: 1;
+    transform: translateY(-50%);
+  }
+}
+
+/* Mobile layout (≤820px): keep actions visible, tighten hit targets */
+@media (max-width: 820px) {
+  .message-actions {
+    opacity: 1;
+    transform: translateY(-50%);
+  }
+
+  .message-actions button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .message-group {
+    padding: 6px 12px;
+  }
+
+  .markdown {
+    font-size: 15px;
+  }
+}
+
+/* Small phones (≤520px): go even tighter */
+@media (max-width: 520px) {
+  .message-group {
+    grid-template-columns: 42px minmax(0, 1fr);
+    padding: 6px 8px;
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    font-size: 12px;
+    margin-top: 3px;
+  }
+
+  .message-row {
+    margin-left: -42px;
+    padding-left: 42px;
+  }
+
+  .row-stamp {
+    font-size: 9px;
+  }
+}

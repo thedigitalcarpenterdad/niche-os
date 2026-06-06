@@ -114,24 +114,43 @@
     bottom: 0;
     left: 0;
     right: 0;
-    height: 3rem;
-    background: linear-gradient(to bottom, transparent, var(--bg-primary, #1a1a1a));
+    height: 3.5rem;
+    /* var(--bg) matches the actual shell background in both light + dark mode */
+    background: linear-gradient(to bottom, transparent, var(--bg));
     pointer-events: none;
   }
   .read-more-btn {
-    display: inline-block;
-    margin-top: 0.25rem;
-    padding: 0;
-    background: none;
-    border: none;
+    /* Inline-flex keeps it next to the text flow */
+    display: inline-flex;
+    align-items: center;
+    margin-top: 0.3rem;
+    /* Generous padding for touch targets (44px min height on mobile) */
+    padding: 0.35rem 0.6rem;
+    background: color-mix(in srgb, var(--accent, #7c8cf8) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent, #7c8cf8) 35%, transparent);
+    border-radius: 999px;
     color: var(--accent, #7c8cf8);
-    font-size: 0.8rem;
-    font-weight: 500;
+    font-size: 0.78rem;
+    font-weight: 600;
     cursor: pointer;
-    text-decoration: underline;
-    text-underline-offset: 2px;
+    text-decoration: none;
+    letter-spacing: 0.01em;
+    transition: background 120ms ease, border-color 120ms ease;
+    /* Ensure at least 36px height (touch-friendly) */
+    min-height: 2.25rem;
   }
-  .read-more-btn:hover {
-    opacity: 0.8;
+  .read-more-btn:hover,
+  .read-more-btn:active {
+    background: color-mix(in srgb, var(--accent, #7c8cf8) 22%, transparent);
+    border-color: color-mix(in srgb, var(--accent, #7c8cf8) 55%, transparent);
+  }
+
+  /* On touch screens: slightly bigger, always-tappable */
+  @media (hover: none) and (pointer: coarse) {
+    .read-more-btn {
+      padding: 0.5rem 0.9rem;
+      font-size: 0.85rem;
+      min-height: 2.75rem;
+    }
   }
 </style>
