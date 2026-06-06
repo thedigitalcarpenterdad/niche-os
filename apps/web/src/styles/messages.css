@@ -1332,6 +1332,12 @@
   .markdown {
     font-size: 15px;
   }
+
+  /* Reserve space on the right so absolutely-positioned action bar never
+     overlaps message text on touch screens */
+  .message-content {
+    padding-right: 48px;
+  }
 }
 
 /* Small phones (≤520px): go even tighter */
