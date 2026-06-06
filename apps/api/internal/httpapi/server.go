@@ -106,6 +106,8 @@ func (s *Server) Handler() http.Handler {
 		r.Get("/auth/oidc/callback", s.oidcCallback)
 		r.Get("/auth/telegram/login", s.handleTelegramLogin)
 		r.Get("/auth/telegram/callback", s.handleTelegramCallback)
+		r.Get("/auth/logout", s.handleLogout)
+		r.Post("/auth/logout", s.handleLogout)
 		r.Get("/me", s.me)
 		r.Patch("/me", s.updateMe)
 		r.Get("/workspaces", s.listWorkspaces)

@@ -390,3 +390,21 @@
   line-height: 1.5;
   font-size: 13px;
 }
+
+/* ---------- MOBILE THREAD FIXES ---------- */
+@media (max-width: 820px) {
+  /* Ensure thread fills full dynamic viewport height on iOS */
+  .thread {
+    height: 100dvh;
+  }
+
+  /* Bottom padding on thread scroll so content isn't hidden behind reply composer */
+  .thread-scroll {
+    padding-bottom: 80px;
+  }
+
+  /* Safe-area inset for iOS home indicator on reply composer */
+  .reply-composer {
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+  }
+}

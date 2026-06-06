@@ -1620,6 +1620,10 @@
     setActiveMessages(messages.map((message) => message.id === data.root.id ? data.root : message));
     replies = data.replies;
     selectedThreadState = data.thread_state;
+    // Scroll thread to bottom so the latest reply is visible
+    await tick();
+    const threadScroll = document.querySelector(".thread-scroll");
+    if (threadScroll) threadScroll.scrollTop = threadScroll.scrollHeight;
   }
 
   async function sendReply() {
@@ -1956,6 +1960,18 @@
     const rootID = event.payload.root_message_id || event.payload.message_id;
     if (selectedThread && rootID === selectedThread.id) {
       await refreshThread(selectedThread.id, selectedThread);
+    }
+    // Auto-open thread when a bot reply arrives in the current channel view.
+    if (
+      event.type === "thread.reply_created" &&
+      affectsActiveView &&
+      rootID &&
+      !selectedThread
+    ) {
+      const rootMsg = messages.find((m) => m.id === rootID);
+      if (rootMsg && rootMsg.author_id !== user?.id) {
+        await openThread(rootMsg);
+      }
     }
   }
 

@@ -365,3 +365,16 @@ func firstNonEmpty(values ...string) string {
 	}
 	return ""
 }
+// handleLogout clears the session cookie and redirects to the home page.
+func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "cc_session",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   s.secureCookies(r),
+		SameSite: http.SameSiteLaxMode,
+	})
+	http.Redirect(w, r, "/", http.StatusFound)
+}

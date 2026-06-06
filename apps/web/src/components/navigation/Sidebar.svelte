@@ -224,5 +224,6 @@
       </div>
       <span class="presence-dot active" aria-hidden="true"></span>
     </button>
+    <a href="/api/auth/logout" class="sign-out-btn" title="Sign out" aria-label="Sign out">&#x23FB;</a>
   {/if}
 </aside>

@@ -653,3 +653,22 @@ button.ghost {
   background: var(--success);
   border-color: var(--success);
 }
+
+.sign-out-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 6px 8px 6px auto;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 18px;
+  text-decoration: none;
+  transition: color 120ms ease, background 120ms ease;
+  flex-shrink: 0;
+}
+.sign-out-btn:hover {
+  color: #e55;
+  background: rgba(220, 50, 50, 0.12);
+}
