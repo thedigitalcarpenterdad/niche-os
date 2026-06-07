@@ -341,3 +341,23 @@ func slug(value string) string {
 func isReservedWorkspaceSlug(value string) bool {
 	return value == "clickclack" || value == "guests"
 }
+
+// autoHandleFromName derives a handle from a display name when none is explicitly set.
+// E.g. NicheOS AI → nicheosai, Builder AI → builderai
+func autoHandleFromName(name string) string {
+	lower := strings.ToLower(name)
+	var b strings.Builder
+	for _, r := range lower {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' || r == '-' {
+			b.WriteRune(r)
+		}
+	}
+	h := b.String()
+	if len(h) < 2 {
+		return ""
+	}
+	if len(h) > 32 {
+		return h[:32]
+	}
+	return h
+}

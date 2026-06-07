@@ -84,6 +84,9 @@ func (s *Store) CreateBot(ctx context.Context, input store.CreateBotInput) (stor
 	if err != nil {
 		return store.User{}, store.BotToken{}, err
 	}
+	if handle == "" {
+		handle = autoHandleFromName(displayName)
+	}
 	avatarURL, err := normalizeAvatarURL(input.AvatarURL)
 	if err != nil {
 		return store.User{}, store.BotToken{}, err

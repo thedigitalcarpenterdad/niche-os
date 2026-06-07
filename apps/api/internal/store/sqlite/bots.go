@@ -84,6 +84,10 @@ func (s *Store) CreateBot(ctx context.Context, input store.CreateBotInput) (stor
 	if err != nil {
 		return store.User{}, store.BotToken{}, err
 	}
+	// Auto-derive handle from display_name if none provided — ensures every bot is discoverable by @handle
+	if handle == "" {
+		handle = autoHandleFromName(displayName)
+	}
 	avatarURL, err := normalizeAvatarURL(input.AvatarURL)
 	if err != nil {
 		return store.User{}, store.BotToken{}, err
