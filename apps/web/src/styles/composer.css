@@ -5,11 +5,21 @@
   --composer-overlay-gap: 8px;
   --composer-overlay-inset-x: 18px;
 
-  padding: 18px 18px 10px;
+  /* env() lifts the composer above the iOS home indicator + safe area */
+  padding: 18px 18px calc(10px + env(safe-area-inset-bottom, 0px));
   background: var(--bg);
   display: grid;
   gap: 0;
   position: relative;
+}
+
+/* iOS/iPad: extra breathing room above home bar when keyboard is up */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  @media (max-width: 1180px) {
+    .composer {
+      padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    }
+  }
 }
 
 .composer-card {
