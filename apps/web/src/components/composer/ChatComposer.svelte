@@ -508,6 +508,12 @@
           rows="1"
           {placeholder}
           aria-label={ariaLabel}
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="none"
+          spellcheck="false"
+          data-lpignore="true"
+          data-form-type="other"
           oninput={handleInput}
           onfocus={handleFocus}
           onkeydown={handleKeydown}
