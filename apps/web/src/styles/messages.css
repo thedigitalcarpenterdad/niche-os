@@ -1313,7 +1313,7 @@
   }
 }
 
-/* Mobile layout (≤820px): keep actions visible, tighten hit targets */
+/* Tablet + Mobile (≤820px) */
 @media (max-width: 820px) {
   .message-actions {
     opacity: 1;
@@ -1321,22 +1321,63 @@
   }
 
   .message-actions button {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
   }
 
   .message-group {
-    padding: 6px 12px;
+    padding: 8px 14px;
   }
 
   .markdown {
-    font-size: 15px;
+    font-size: 15.5px;
+    line-height: 1.6;
   }
 
-  /* Reserve space on the right so absolutely-positioned action bar never
-     overlaps message text on touch screens */
+  /* Prevent absolutely-positioned reply bar from overlapping message text */
   .message-content {
-    padding-right: 48px;
+    padding-right: 52px;
+  }
+
+  /* Long URLs: allow break anywhere so they don't overflow */
+  .markdown a {
+    word-break: break-all;
+  }
+
+  /* Unread pill: ensure it never overlaps first message by adding top margin
+     to the message scroll area when the pill is visible */
+  .messages-scroll {
+    padding-top: 4px;
+  }
+
+  /* Larger channel name + meta in topbar */
+  .topbar-title h1 {
+    font-size: 17px;
+  }
+
+  /* Slightly larger touch targets for channel list items */
+  .channel-item, .dm-item {
+    min-height: 36px;
+  }
+}
+
+/* Tablet-specific (between 520px and 820px) — better sidebar proportions */
+@media (min-width: 521px) and (max-width: 820px) {
+  .message-group {
+    grid-template-columns: 48px minmax(0, 1fr);
+    padding: 8px 16px;
+  }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 13px;
+  }
+
+  .message-row {
+    margin-left: -48px;
+    padding-left: 48px;
   }
 }
 
