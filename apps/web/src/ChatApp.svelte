@@ -1797,7 +1797,7 @@
   async function sendVoiceNote(blob: Blob, durationMs: number) {
     if (!selectedWorkspaceID) return;
     if (!selectedChannelID && !selectedDirectID) return;
-    const ext = blob.type.includes('ogg') ? 'ogg' : 'webm';
+    const ext = blob.type.includes('ogg') ? 'ogg' : blob.type.includes('mp4') || blob.type.includes('m4a') ? 'm4a' : 'webm';
     const file = new File([blob], `voice-note-${Date.now()}.${ext}`, { type: blob.type });
     const form = new FormData();
     form.set("workspace_id", selectedWorkspaceID);
