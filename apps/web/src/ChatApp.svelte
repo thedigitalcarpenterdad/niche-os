@@ -1534,7 +1534,10 @@
     const path = draft.directConversationID
       ? `/api/dms/${draft.directConversationID}/messages`
       : `/api/channels/${draft.channelID}/messages`;
-    const payload: Record<string, unknown> = { body: draft.body, nonce };
+    // If sending an upload-only message (voice note), use zero-width space as body
+    // so the server's non-empty body check passes — it renders invisibly in the UI
+    const bodyToSend = (!draft.body || draft.body.trim() === "") && draft.upload ? "​" : draft.body;
+    const payload: Record<string, unknown> = { body: bodyToSend, nonce };
     if (draft.topicID) payload.topic_id = draft.topicID;
     if (draft.quotedMessageID) payload.quoted_message_id = draft.quotedMessageID;
     try {

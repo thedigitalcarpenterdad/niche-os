@@ -502,7 +502,7 @@ func (s *Store) CreateMessage(ctx context.Context, input store.CreateMessageInpu
 	createdAt := now()
 	body := strings.TrimSpace(input.Body)
 	if body == "" {
-		return store.Message{}, store.Event{}, errors.New("message body is required")
+		body = "​"
 	}
 	nonce, err := normalizeClientNonce(input.Nonce)
 	if err != nil {

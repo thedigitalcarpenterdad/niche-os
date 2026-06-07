@@ -167,8 +167,9 @@ func (s *Store) CreateDirectMessage(ctx context.Context, input store.CreateDirec
 	id := newID("msg")
 	createdAt := now()
 	body := strings.TrimSpace(input.Body)
+	// Allow empty body — voice notes and file-only messages attach content separately
 	if body == "" {
-		return store.Message{}, store.Event{}, errors.New("message body is required")
+		body = "​"
 	}
 	nonce, err := normalizeClientNonce(input.Nonce)
 	if err != nil {
