@@ -165,6 +165,14 @@
   $: recentPeople = collectRecentPeople(messages, directConversations, user?.id || "");
   $: workspaceBots = (moderationMembers || []).filter((m) => m.role === 'bot' || m.user?.kind === 'bot').map((m) => m.user);
   $: mentionPeople = collectMentionPeople(user, recentPeople, moderationMembers, selectedDirect);
+  // dmPeople = all workspace members + bots, for the DM search modal (no 12-person cap)
+  $: dmPeople = (() => {
+    const map = new Map<string, import('./lib/types').User>();
+    for (const m of moderationMembers) { if (m.user?.id) map.set(m.user.id, m.user); }
+    for (const b of workspaceBots) { if (b?.id) map.set(b.id, b); }
+    for (const p of recentPeople) { if (p?.id) map.set(p.id, p); }
+    return [...map.values()];
+  })();
   $: if (replyContext === "channel" && replyTarget && !messages.some((m) => m.id === replyTarget?.id)) clearReplyTarget();
   $: if (replyContext === "dm" && replyTarget && !messages.some((m) => m.id === replyTarget?.id)) clearReplyTarget();
   $: if (replyContext === "thread" && replyTarget && selectedThread && replyTarget.id !== selectedThread.id && !replies.some((r) => r.id === replyTarget?.id)) clearReplyTarget();
@@ -2493,7 +2501,7 @@
 {/if}
 {#if showCreateDirect}
   <CreateDirectModal
-    people={recentPeople}
+    people={dmPeople}
     currentUserID={user?.id}
     memberID={directMemberID}
     onMemberID={(value) => (directMemberID = value)}
