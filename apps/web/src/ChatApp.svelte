@@ -265,10 +265,34 @@
     voiceAgentUrl = '';
   }
 
+  // Silently establish a Talkie session the moment a ClickClack session is
+  // confirmed, so opening talkie.nichewaterproofing.com directly (outside the
+  // Voice modal) also lands the user already logged in. Best-effort: failures
+  // are swallowed since ClickClack itself must keep working regardless of
+  // Talkie's availability. Fires once per page load via `talkieSSOAttempted`.
+  let talkieSSOAttempted = false;
+  async function silentTalkieSSO() {
+    if (talkieSSOAttempted) return;
+    talkieSSOAttempted = true;
+    try {
+      const { ticket } = await api<{ ticket: string; expires_at: string }>("/api/talkie-sso-ticket");
+      await fetch(
+        "https://talkie.nichewaterproofing.com/auth/sso?ticket=" +
+          encodeURIComponent(ticket) +
+          "&return_to=" +
+          encodeURIComponent("/"),
+        { credentials: "include", mode: "no-cors" }
+      );
+    } catch (err) {
+      console.warn("Silent Talkie SSO passthrough failed (non-blocking)", err);
+    }
+  }
+
   async function boot() {
     try {
       const me = await api<{ user: User }>("/api/me");
       user = me.user;
+      void silentTalkieSSO();
       await loadWorkspaces();
       if (workspaces.length === 0) {
         status = "create a workspace";
