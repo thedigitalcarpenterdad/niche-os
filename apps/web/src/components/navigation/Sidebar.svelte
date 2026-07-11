@@ -125,28 +125,29 @@
       {onCreateDirect}
     />
 
-    <section class="agents-section">
-      <div class="section-title">
-        <span class="caret" aria-hidden="true">▾</span>
-        <span class="label">AI Agents</span>
-      </div>
-      <div class="agents-list">
-        {#each AGENTS as agent}
-          <div class="agent-card">
-            <div class="agent-card-icon">{agent.icon}</div>
-            <div class="agent-card-body">
-              <span class="agent-card-name">{agent.name}</span>
-              <span class="agent-card-desc">{agent.desc}</span>
-              <div class="agent-card-actions">
-                <button
-                  class="agent-action-btn"
-                  type="button"
-                  onclick={() => onAgentChat(agent)}
-                >💬 Chat</button>
-                {#if agent.voice}
+    {#if workspaceName}
+      <section class="agents-section">
+        <div class="section-title">
+          <span class="caret" aria-hidden="true">▾</span>
+          <span class="label">AI Agents</span>
+        </div>
+        <div class="agents-list">
+          {#each AGENTS as agent}
+            <div class="agent-card">
+              <div class="agent-card-icon">{agent.icon}</div>
+              <div class="agent-card-body">
+                <span class="agent-card-name">{agent.name}</span>
+                <span class="agent-card-desc">{agent.desc}</span>
+                <div class="agent-card-actions">
                   <button
-                    class="agent-action-btn agent-action-voice"
+                    class="agent-action-btn"
                     type="button"
+                    onclick={() => onAgentChat(agent)}
+                  >💬 Chat</button>
+                    {#if agent.voice}
+                    <button
+                      class="agent-action-btn agent-action-voice"
+                      type="button"
                     onclick={() => onVoiceAgent(agent)}
                   >🎙️ Voice</button>
                 {/if}
@@ -156,6 +157,7 @@
         {/each}
       </div>
     </section>
+    {/if}
 
     <section class="nav-section">
       <div class="section-title">
@@ -220,7 +222,7 @@
       />
       <div class="user-meta">
         <strong>{currentUser.display_name}</strong>
-        <span>{currentUser.handle ? handleLabel(currentUser.handle) : connected ? "Active" : "Reconnecting…"}</span>
+        <span>{currentUser.handle ? handleLabel(currentUser.handle) : connected ? "Active" : workspaceName ? "Reconnecting…" : "Active"}</span>
       </div>
       <span class="presence-dot active" aria-hidden="true"></span>
     </button>

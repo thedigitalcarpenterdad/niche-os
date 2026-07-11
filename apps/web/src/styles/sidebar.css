@@ -654,6 +654,31 @@ button.ghost {
   border-color: var(--success);
 }
 
+/* Mobile: enforce a real >=44px touch target (Apple HIG minimum) on the
+   Chat/Voice buttons. On small viewports the compact desktop padding
+   (2px 7px, ~20-24px tall) is easy to miss with a finger -- taps land on
+   the card background or a neighboring element and silently do nothing,
+   which reads as "the button doesn't work" even though the click handler
+   is fine. Reported 2026-07-11 (mobile screenshot, Chat/Voice appeared
+   unresponsive); root cause traced to touch-target size, not JS. */
+@media (max-width: 820px), (pointer: coarse) {
+  .agent-card-actions {
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .agent-action-btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 10px 14px;
+    font-size: 13px;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
 .sign-out-btn {
   display: flex;
   align-items: center;

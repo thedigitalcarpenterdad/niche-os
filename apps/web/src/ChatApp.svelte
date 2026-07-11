@@ -198,14 +198,35 @@
     if (typingSweeper) window.clearInterval(typingSweeper);
   });
 
-  function openAgentChat(agent: any) {
+  async function openAgentChat(agent: any) {
     // Find the bot user matching this agent, preferring a name match, then NicheBot, then any bot.
-    const needle = String(agent?.id || agent?.name || "").toLowerCase().replace(/[-_]/g, " ").trim();
-    const byName = needle
-      ? workspaceBots.find((b: User) => (b.display_name || "").toLowerCase().includes(needle))
-      : undefined;
-    const niche = workspaceBots.find((b: User) => (b.display_name || "").toLowerCase().includes("nichebot"));
-    const bot = byName || niche || workspaceBots[0];
+    // NOTE: resolve directly against moderationMembers (not the derived
+    // `workspaceBots` reactive var) after an await, because Svelte's `$:`
+    // statements are batched onto the next microtask/tick -- reading
+    // `workspaceBots` immediately after `await loadModerationMembers()`
+    // can still see the pre-update (often empty) value even though
+    // moderationMembers itself is already fresh. That staleness is what
+    // made "Chat" on an AI Agent silently fall through to the generic
+    // "Start a DM" picker instead of opening that agent's conversation,
+    // even once moderation/members had already loaded. Fixed 2026-07-11.
+    const resolveBot = () => {
+      const bots = (moderationMembers || [])
+        .filter((m) => m.role === "bot" || m.user?.kind === "bot")
+        .map((m) => m.user);
+      const needle = String(agent?.id || agent?.name || "").toLowerCase().replace(/[-_]/g, " ").trim();
+      const byName = needle
+        ? bots.find((b: User) => (b.display_name || "").toLowerCase().includes(needle))
+        : undefined;
+      const niche = bots.find((b: User) => { const n = (b.display_name || "").toLowerCase(); return n.includes("nicheosai") || n.includes("niche os") || n.includes("nichebot"); });
+      return byName || niche || bots[0];
+    };
+
+    let bot = resolveBot();
+    if (!bot && moderationMembers.length === 0) {
+      await loadModerationMembers();
+      await tick();
+      bot = resolveBot();
+    }
     if (bot) {
       // Directly open (or create) the DM with this bot instead of an empty picker.
       void startDirectWithUser(bot.id);
@@ -214,15 +235,28 @@
     }
   }
 
-  function openVoiceAgent(agent: any) {
+  async function openVoiceAgent(agent: any) {
     // Map the agent (or bot) to its Talkie voice-room slug.
     // AGENTS entries already carry a fully-formed talkieSlug (e.g. "builder-internal").
     const rawName = agent?.name || agent?.display_name || "voice";
     const nameSlug = String(rawName).toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
     const slug = agent?.talkieSlug || (nameSlug + "-internal");
-    voiceAgentUrl = "https://talkie.nichewaterproofing.com/job/" + slug;
     voiceAgentBot = { display_name: rawName } as any;
     voiceAgentOpen = true;
+    // Default to the plain job URL; if SSO ticket minting fails we still open
+    // the modal (it will show Talkie's own login if truly unauthenticated)
+    // rather than silently doing nothing.
+    voiceAgentUrl = "https://talkie.nichewaterproofing.com/job/" + slug;
+    try {
+      const { ticket } = await api<{ ticket: string; expires_at: string }>("/api/talkie-sso-ticket");
+      voiceAgentUrl =
+        "https://talkie.nichewaterproofing.com/auth/sso?ticket=" +
+        encodeURIComponent(ticket) +
+        "&return_to=" +
+        encodeURIComponent("/job/" + slug);
+    } catch (err) {
+      console.error("Talkie SSO ticket mint failed, falling back to direct job URL", err);
+    }
   }
 
   function closeVoiceAgent() {
@@ -1955,7 +1989,27 @@
         markMessageWindowHasNewer(currentConversationKey());
       } else if (event.type === "message.created") {
         await loadNewerMessages();
+      } else if (event.type === "message.updated") {
+        // In-place patch: fetch only the changed message instead of a full page
+        // reload so the virtual list doesn't re-layout on every streaming token.
+        const msgID = event.payload.message_id;
+        if (msgID) {
+          try {
+            const data = await api<{ message: Message }>(`/api/messages/${msgID}`);
+            const updated = data.message;
+            if (messages.some((m) => m.id === updated.id)) {
+              setActiveMessages(messages.map((m) => (m.id === updated.id ? updated : m)));
+            } else {
+              await loadMessages();
+            }
+          } catch {
+            await loadMessages();
+          }
+        } else {
+          await loadMessages();
+        }
       } else {
+        // message.deleted — full reload needed
         await loadMessages();
       }
       if (event.type === "message.created") {

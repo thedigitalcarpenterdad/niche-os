@@ -155,6 +155,7 @@ func serve(args []string) error {
 			BotToken:    cfg.TelegramBotToken,
 			BotUsername: cfg.TelegramBotUsername,
 		},
+		TalkieSSOSharedSecret: cfg.TalkieSSOSharedSecret,
 		PushNotifier: pushNotifier,
 	})
 	return httpapi.ListenAndServe(ctx, cfg.Addr, server.Handler())

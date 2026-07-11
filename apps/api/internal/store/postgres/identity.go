@@ -10,6 +10,24 @@ import (
 	"github.com/openclaw/clickclack/apps/api/internal/store/postgres/storedb"
 )
 
+// GetIdentityByUserProvider returns the linked identity for the given user
+// and provider (e.g. provider="oidc" for the shared Logto/Talkie SSO
+// identity). Returns store.ErrIdentityNotFound if no such identity exists.
+func (s *Store) GetIdentityByUserProvider(ctx context.Context, userID, provider string) (store.Identity, error) {
+	row := s.db.QueryRowContext(ctx,
+		`SELECT id, user_id, provider, provider_subject, email, created_at
+		 FROM identities WHERE user_id = $1 AND provider = $2`,
+		userID, provider)
+	var identity store.Identity
+	if err := row.Scan(&identity.ID, &identity.UserID, &identity.Provider, &identity.ProviderSubject, &identity.Email, &identity.CreatedAt); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return store.Identity{}, store.ErrIdentityNotFound
+		}
+		return store.Identity{}, err
+	}
+	return identity, nil
+}
+
 func (s *Store) UpsertIdentityUser(ctx context.Context, input store.UpsertIdentityUserInput) (store.User, error) {
 	provider := strings.TrimSpace(input.Provider)
 	subject := strings.TrimSpace(input.ProviderSubject)

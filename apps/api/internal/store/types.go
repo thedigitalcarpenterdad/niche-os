@@ -34,6 +34,10 @@ var ErrPostRateLimited = errors.New("waiting room post limit reached")
 // budget in a workspace.
 var ErrUploadQuotaExceeded = errors.New("upload quota exceeded")
 
+// ErrIdentityNotFound is returned when a user has no linked identity for the
+// requested provider (e.g. no Logto/OIDC identity linked yet).
+var ErrIdentityNotFound = errors.New("identity not found")
+
 const (
 	WorkspaceRoleOwner           = "owner"
 	WorkspaceRoleModerator       = "moderator"
@@ -379,6 +383,17 @@ type UpsertIdentityUserInput struct {
 	AvatarURL       string
 }
 
+// Identity represents a linked external-auth identity (e.g. Logto/OIDC,
+// GitHub, Google) for a ClickClack user.
+type Identity struct {
+	ID              string `json:"id"`
+	UserID          string `json:"user_id"`
+	Provider        string `json:"provider"`
+	ProviderSubject string `json:"provider_subject"`
+	Email           string `json:"email"`
+	CreatedAt       string `json:"created_at"`
+}
+
 type UpdateUserProfileInput struct {
 	UserID      string
 	DisplayName string
@@ -653,6 +668,7 @@ type Store interface {
 	CreateConnectedAccount(ctx context.Context, input CreateConnectedAccountInput) (ConnectedAccount, error)
 	RevokeConnectedAccount(ctx context.Context, accountID, requesterID string) (ConnectedAccount, error)
 	UpsertIdentityUser(ctx context.Context, input UpsertIdentityUserInput) (User, error)
+	GetIdentityByUserProvider(ctx context.Context, userID, provider string) (Identity, error)
 	UpdateUserProfile(ctx context.Context, input UpdateUserProfileInput) (User, error)
 	UpdateUserProfileAndNotificationSettings(ctx context.Context, input UpdateUserProfileAndNotificationSettingsInput) (User, error)
 	UpdateNotificationSettings(ctx context.Context, input UpdateNotificationSettingsInput) (NotificationSettings, error)

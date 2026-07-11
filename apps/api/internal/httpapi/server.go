@@ -2,7 +2,10 @@ package httpapi
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -35,6 +38,7 @@ type Server struct {
 	telegramAuth   TelegramAuthConfig
 	disableDevAuth bool
 	pushNotifier   PushNotifier
+	talkieSSOSharedSecret string
 }
 
 const (
@@ -62,6 +66,7 @@ type Options struct {
 	TelegramAuth   TelegramAuthConfig
 	DisableDevAuth bool
 	PushNotifier   PushNotifier
+	TalkieSSOSharedSecret string
 }
 
 func New(st store.Store, hub *realtime.Hub, options Options) *Server {
@@ -80,6 +85,7 @@ func New(st store.Store, hub *realtime.Hub, options Options) *Server {
 		telegramAuth:   options.TelegramAuth,
 		disableDevAuth: options.DisableDevAuth,
 		pushNotifier:   options.PushNotifier,
+		talkieSSOSharedSecret: options.TalkieSSOSharedSecret,
 	}
 }
 
@@ -110,6 +116,7 @@ func (s *Server) Handler() http.Handler {
 		r.Post("/auth/logout", s.handleLogout)
 		r.Get("/me", s.me)
 		r.Patch("/me", s.updateMe)
+		r.Get("/talkie-sso-ticket", s.talkieSSOTicket)
 		r.Get("/workspaces", s.listWorkspaces)
 		r.Post("/workspaces", s.createWorkspace)
 		r.Get("/routes/{workspace_route_id}/{target_route_id}", s.resolveRoute)
@@ -359,6 +366,79 @@ func (s *Server) updateMe(w http.ResponseWriter, r *http.Request) {
 		NotificationSettings: body.NotificationSettings,
 	})
 	writeResult(w, map[string]any{"user": updated}, err)
+}
+
+// talkieSSOTicketTTL bounds how long a minted SSO ticket is valid for. It is
+// intentionally short — the ticket is consumed immediately by the Talkie
+// iframe on load and never needs to survive longer than that round trip.
+const talkieSSOTicketTTL = 60 * time.Second
+
+type talkieSSOTicketPayload struct {
+	Sub       string `json:"sub"`
+	Email     string `json:"email,omitempty"`
+	Name      string `json:"name,omitempty"`
+	ExpiresAt int64  `json:"exp"`
+}
+
+// talkieSSOTicket mints a short-lived, HMAC-signed ticket that lets an
+// already-authenticated ClickClack user establish a Talkie session without
+// going through Talkie's own (cross-origin, iframe-hostile) Logto login
+// redirect. It requires the caller's ClickClack session already be
+// authenticated, and requires the user to have a linked Logto/OIDC identity
+// (the same shared Logto tenant Talkie authenticates against).
+func (s *Server) talkieSSOTicket(w http.ResponseWriter, r *http.Request) {
+	act, err := s.currentActor(r)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, err)
+		return
+	}
+	if act.botTokenID != "" {
+		writeError(w, http.StatusForbidden, errors.New("bot tokens cannot mint Talkie SSO tickets"))
+		return
+	}
+	if s.talkieSSOSharedSecret == "" {
+		writeError(w, http.StatusServiceUnavailable, errors.New("talkie sso is not configured"))
+		return
+	}
+	identity, err := s.store.GetIdentityByUserProvider(r.Context(), act.user.ID, "oidc")
+	if err != nil {
+		if errors.Is(err, store.ErrIdentityNotFound) {
+			writeError(w, http.StatusUnprocessableEntity, errors.New("no linked Logto identity for this account; log in via \"Continue with Logto\" once to link one"))
+			return
+		}
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	expiresAt := time.Now().Add(talkieSSOTicketTTL)
+	payload := talkieSSOTicketPayload{
+		Sub:       identity.ProviderSubject,
+		Email:     identity.Email,
+		Name:      act.user.DisplayName,
+		ExpiresAt: expiresAt.Unix(),
+	}
+	ticket, err := signTalkieSSOTicket(s.talkieSSOSharedSecret, payload)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ticket":     ticket,
+		"expires_at": expiresAt.UTC().Format(time.RFC3339),
+	})
+}
+
+// signTalkieSSOTicket serializes and HMAC-signs a ticket payload, returning
+// an opaque "<base64url(payload)>.<base64url(hmac-sha256)>" string.
+func signTalkieSSOTicket(secret string, payload talkieSSOTicketPayload) (string, error) {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+	encodedBody := base64.RawURLEncoding.EncodeToString(body)
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(encodedBody))
+	sig := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+	return encodedBody + "." + sig, nil
 }
 
 func (s *Server) listWorkspaces(w http.ResponseWriter, r *http.Request) {
