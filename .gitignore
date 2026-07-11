@@ -25,3 +25,6 @@ apps/web/.env
 *.bak
 *.bak-*
 apps/api/internal/webassets/dist/
+
+# stray compiled binary left in source tree (build artifact, not source)
+apps/api/clickclack-server
