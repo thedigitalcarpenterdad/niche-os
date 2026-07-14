@@ -209,10 +209,7 @@
     // made "Chat" on an AI Agent silently fall through to the generic
     // "Start a DM" picker instead of opening that agent's conversation,
     // even once moderation/members had already loaded. Fixed 2026-07-11.
-    const resolveBot = () => {
-      const bots = (moderationMembers || [])
-        .filter((m) => m.role === "bot" || m.user?.kind === "bot")
-        .map((m) => m.user);
+    const resolveFromList = (bots: User[]) => {
       const needle = String(agent?.id || agent?.name || "").toLowerCase().replace(/[-_]/g, " ").trim();
       const byName = needle
         ? bots.find((b: User) => (b.display_name || "").toLowerCase().includes(needle))
@@ -220,12 +217,30 @@
       const niche = bots.find((b: User) => { const n = (b.display_name || "").toLowerCase(); return n.includes("nicheosai") || n.includes("niche os") || n.includes("nichebot"); });
       return byName || niche || bots[0];
     };
+    const resolveBot = () => {
+      const bots = (moderationMembers || [])
+        .filter((m) => m.role === "bot" || m.user?.kind === "bot")
+        .map((m) => m.user);
+      return resolveFromList(bots);
+    };
 
     let bot = resolveBot();
     if (!bot && moderationMembers.length === 0) {
       await loadModerationMembers();
       await tick();
       bot = resolveBot();
+    }
+    // For plain members, loadModerationMembers() is a no-op (the moderation endpoint
+    // requires owner/moderator role). Fall back to /api/workspaces/{id}/bots which is
+    // accessible to all workspace members and returns every bot user in the workspace.
+    if (!bot && selectedWorkspaceID) {
+      try {
+        const data = await api<{ bots: Array<{ bot: User }> }>(`/api/workspaces/${selectedWorkspaceID}/bots`);
+        const botUsers = (data.bots || []).map((b) => b.bot);
+        bot = resolveFromList(botUsers);
+      } catch {
+        // ignore; fall through to showCreateDirect
+      }
     }
     if (bot) {
       // Directly open (or create) the DM with this bot instead of an empty picker.
@@ -1855,6 +1870,19 @@
     input.value = "";
   }
 
+  async function uploadFileFromDrop(file: File) {
+    if (!selectedWorkspaceID) return;
+    const probe = await probeMediaDimensions(file);
+    const form = new FormData();
+    form.set('workspace_id', selectedWorkspaceID);
+    form.set('file', file);
+    if (probe.width > 0) form.set('width', String(probe.width));
+    if (probe.height > 0) form.set('height', String(probe.height));
+    if (probe.durationMS > 0) form.set('duration_ms', String(probe.durationMS));
+    const data = await api<{ upload: Upload }>('/api/uploads', { method: 'POST', body: form });
+    pendingUpload = data.upload;
+  }
+
   async function sendVoiceNote(blob: Blob, durationMs: number) {
     if (!selectedWorkspaceID) return;
     if (!selectedChannelID && !selectedDirectID) return;
@@ -1993,6 +2021,16 @@
       event.channel_id === selectedChannelID || event.payload.direct_conversation_id === selectedDirectID;
     if (event.type === "message.created" && !affectsActiveView) {
       handleUnreadBump(event);
+    }
+    // Clear typing indicator for the message author when they send a message.
+    // Bots often don't send typing.stopped, so this ensures the indicator
+    // disappears promptly (within ~1s via the sweep interval) instead of
+    // waiting for the full 6.5s TTL to expire.
+    if (event.type === "message.created") {
+      const msgAuthorID = typeof event.payload.author_id === "string" ? event.payload.author_id : "";
+      if (msgAuthorID && typingEntries.some((e) => e.userID === msgAuthorID)) {
+        typingEntries = typingEntries.filter((e) => e.userID !== msgAuthorID);
+      }
     }
     if (
       affectsActiveView &&
@@ -2147,13 +2185,19 @@
       (selectedChannelID && eventChannel === selectedChannelID) ||
       (selectedDirectID && eventDM === selectedDirectID);
     if (!matchesView) return;
+    // For DM views, only show typing from members of that specific DM
+    if (selectedDirectID && eventDM === selectedDirectID) {
+      const currentDM = directConversations.find((dc) => dc.id === selectedDirectID);
+      if (currentDM && userID && !currentDM.members.some((m) => m.id === userID)) return;
+    }
     if (event.type === "typing.stopped") {
       typingEntries = typingEntries.filter((entry) => entry.userID !== userID);
       return;
     }
     const author = lookupUser(userID);
+    const toolName = typeof payload.tool_name === "string" ? payload.tool_name : undefined;
     const next = typingEntries.filter((entry) => entry.userID !== userID);
-    next.push({ userID, user: author, expiresAt: Date.now() + TYPING_TTL_MS });
+    next.push({ userID, user: author, expiresAt: Date.now() + TYPING_TTL_MS, toolName });
     typingEntries = next;
     ensureTypingSweeper();
   }
@@ -2516,6 +2560,7 @@
       onFocus={() => (activeComposerContext = "message")}
       onInputRef={(node) => (messageInput = node)}
       onUploadFile={uploadFile}
+      onDropFile={(file) => void uploadFileFromDrop(file)}
       onRemoveUpload={() => (pendingUpload = null)}
       onClearReply={clearReplyTarget}
       onApplyMarkdownWrap={applyMarkdownWrap}

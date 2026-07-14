@@ -57,6 +57,7 @@
     onGifQuery?: (value: string) => void;
     onPickGif?: (url: string, title: string) => void;
     onVoiceNote?: (blob: Blob, durationMs: number) => void;
+    onDropFile?: (file: File) => void;
   };
 
   let {
@@ -88,12 +89,17 @@
     onGifQuery = () => {},
     onPickGif = () => {},
     onVoiceNote,
+    onDropFile,
   }: Props = $props();
 
   let input: HTMLTextAreaElement | null = $state(null);
   let caret = $state(0);
   let dismissedToken = $state("");
   let selectedSuggestionIndex = $state(0);
+
+  // Drag & drop state
+  let dragOver = $state(false);
+  let dragCounter = $state(0); // use counter to handle child element drag-enter/leave
 
   // Voice recording state
   let recording = $state(false);
@@ -220,6 +226,41 @@
       input?.setSelectionRange(nextCaret, nextCaret);
       caret = nextCaret;
     });
+  }
+
+  // Drag and drop handlers
+  function handleDragEnter(event: DragEvent) {
+    if (!event.dataTransfer?.types?.includes('Files')) return;
+    event.preventDefault();
+    dragCounter++;
+    dragOver = true;
+  }
+
+  function handleDragOver(event: DragEvent) {
+    if (!event.dataTransfer?.types?.includes('Files')) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+  }
+
+  function handleDragLeave() {
+    dragCounter--;
+    if (dragCounter <= 0) {
+      dragCounter = 0;
+      dragOver = false;
+    }
+  }
+
+  function handleDrop(event: DragEvent) {
+    event.preventDefault();
+    dragCounter = 0;
+    dragOver = false;
+    if (!onDropFile) return;
+    const files = event.dataTransfer?.files;
+    if (!files || files.length === 0) return;
+    for (let i = 0; i < files.length; i++) {
+      onDropFile(files[i]);
+      break; // Only attach the first file (same as paperclip single-file behaviour)
+    }
   }
 
   function handleInput(event: Event) {
@@ -414,7 +455,24 @@
       {/each}
     </div>
   {/if}
-  <div class="composer-card">
+  <div
+    class="composer-card"
+    class:drag-over={dragOver}
+    role="region"
+    aria-label="Message composer"
+    ondragenter={handleDragEnter}
+    ondragover={handleDragOver}
+    ondragleave={handleDragLeave}
+    ondrop={handleDrop}
+  >
+    {#if dragOver}
+      <div class="drop-zone-overlay" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true">
+          <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M21.44 11.05 12.5 20a6 6 0 0 1-8.49-8.49l8.49-8.48a4 4 0 0 1 5.66 5.66l-8.49 8.49a2 2 0 0 1-2.83-2.83L13.41 7.5"/>
+        </svg>
+        <span>Drop to attach</span>
+      </div>
+    {/if}
     {#if pendingUpload}
       <div class="composer-attachment">
         <span class="attachment-icon" aria-hidden="true">

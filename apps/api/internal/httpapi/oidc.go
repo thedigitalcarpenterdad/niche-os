@@ -74,6 +74,9 @@ func (s *Server) oidcStart(w http.ResponseWriter, r *http.Request) {
 		"scope":         {s.oidc.Scope},
 		"state":         {state},
 	}
+	if ott := r.URL.Query().Get("one_time_token"); ott != "" {
+		values.Set("one_time_token", ott)
+	}
 	http.Redirect(w, r, s.oidc.AuthURL+"?"+values.Encode(), http.StatusFound)
 }
 
@@ -125,6 +128,16 @@ func (s *Server) oidcCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.setSessionCookie(w, r, session)
+
+	// For Niche Waterproofing accounts, ensure gog has a token before landing
+	// on the dashboard. If not, redirect through the gog OAuth flow first.
+	if strings.HasSuffix(strings.ToLower(strings.TrimSpace(profile.Email)), "@nichewaterproofing.com") {
+		if !gogHasToken(profile.Email) {
+			http.Redirect(w, r, "/api/auth/gog/start", http.StatusFound)
+			return
+		}
+	}
+
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 

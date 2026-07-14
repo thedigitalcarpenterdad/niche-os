@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { onDestroy } from "svelte";
+  import { onMount, onDestroy } from "svelte";
+  import { fetchUploadBlobURL, isImageUpload } from "../lib/uploads";
   import type {
     PDFDocumentLoadingTask,
     PDFDocumentProxy,
@@ -15,6 +16,20 @@
   };
 
   let { upload, url, onOpenImage = () => {} }: Props = $props();
+
+  // Authenticated blob URL for images (avoids cookie/auth issues with bare <img src>)
+  let blobURL = $state("");
+  let imageLoadError = $state(false);
+  
+  $effect(() => {
+    if (isImageUpload(upload)) {
+      fetchUploadBlobURL(upload.id)
+        .then((u) => { blobURL = u; })
+        .catch(() => { imageLoadError = true; });
+    }
+  });
+  
+  const displayURL = $derived(isImageUpload(upload) && blobURL ? blobURL : url);
 
   const MAX_MEDIA_HEIGHT = 360;
   const MIN_MEDIA_HEIGHT = 120;
@@ -187,10 +202,10 @@
       type="button"
       class="media-tile__open"
       aria-label={`Open image ${upload.filename}`}
-      onclick={() => onOpenImage(url, upload.filename)}
+      onclick={() => onOpenImage(displayURL, upload.filename)}
     >
       <img
-        src={url}
+        src={displayURL}
         alt={upload.filename}
         loading="lazy"
         decoding="async"
