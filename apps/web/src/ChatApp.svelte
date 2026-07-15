@@ -186,7 +186,14 @@
       })
     : [];
 
+  let gogConnected = true;
+
   onMount(() => {
+    api("/api/auth/gog/status").then((data: any) => {
+      if (data && data.has_token === false) {
+        gogConnected = false;
+      }
+    }).catch(() => {});
     void boot();
   });
 
@@ -2473,6 +2480,12 @@
     onAgentChat={openAgentChat}
   />
 
+  {#if !gogConnected}
+    <div class="gog-banner">
+      ⚠️ Your Google account is not connected — agents cannot send email as you.
+      <a href="/api/auth/gog/start" class="gog-banner-btn">Connect Google →</a>
+    </div>
+  {/if}
   <main class="timeline" inert={mobileNavOpen}>
     <Topbar
       {selectedDirect}
