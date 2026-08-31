@@ -48,8 +48,12 @@ const (
 	GuestPostLimit               = 3
 	MaxDirectConversationMembers = 32
 
-	UploadQuotaBytesPerUserWorkspace int64 = 512 << 20
-	UploadQuotaCountPerUserWorkspace int64 = 64
+	// Raised 2026-08-31: the 64-file cap was hit by legitimate bot usage
+	// (Estimating Agent had 61 real, distinct document sends, each attached
+	// to a real historical message) -- not abuse or an upload leak. Byte
+	// quota raised proportionally since documents can be multi-MB PDFs.
+	UploadQuotaBytesPerUserWorkspace int64 = 2048 << 20
+	UploadQuotaCountPerUserWorkspace int64 = 500
 )
 
 type User struct {
